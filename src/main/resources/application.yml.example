@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: restaurante-virtual
+  jpa:
+    hibernate:
+      ddl-auto: validate
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: true
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+# ==============================
+# MULTI-TENANT CONFIGURATION
+# ==============================
+tenants:
+  default: lima
+  configs:
+    lima:
+      url: jdbc:sqlserver://localhost:3306;databaseName=RestauranteRegional;encrypt=true;trustServerCertificate=true
+      username: sa
+      password: pass
+      driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+      maximum-pool-size: 10

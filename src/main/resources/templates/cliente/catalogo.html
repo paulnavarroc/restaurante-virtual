@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}">
+<head>
+    <title>Catálogo - Sabores Perú</title>
+</head>
+<body>
+<div th:fragment="content">
+
+    <h1>Nuestro Menú</h1>
+
+    <!-- Filtros -->
+    <form method="get" th:action="@{/cliente/catalogo}" class="filtros">
+        <input type="text" name="busqueda" th:value="${busqueda}" placeholder="Buscar plato...">
+
+        <select name="regionId">
+            <option value="">Todas las regiones</option>
+            <option value="1" th:selected="${regionId == 1}">Costa</option>
+            <option value="2" th:selected="${regionId == 2}">Sierra</option>
+            <option value="3" th:selected="${regionId == 3}">Selva</option>
+        </select>
+
+        <select name="categoriaId">
+            <option value="">Todas las categorías</option>
+            <option value="1" th:selected="${categoriaId == 1}">Entradas</option>
+            <option value="2" th:selected="${categoriaId == 2}">Platos de fondo</option>
+            <option value="3" th:selected="${categoriaId == 3}">Postres</option>
+            <option value="4" th:selected="${categoriaId == 4}">Bebidas</option>
+            <option value="5" th:selected="${categoriaId == 5}">Combos</option>
+        </select>
+
+        <button type="submit">Filtrar</button>
+    </form>
+
+    <!-- Lista de productos -->
+    <div class="productos-grid" th:if="${!productos.isEmpty()}">
+        <div class="producto-card" th:each="p : ${productos}">
+            <img th:src="${p.imagenUrl != null ? p.imagenUrl : '/images/default-plato.jpg'}"
+                 th:alt="${p.nombre}">
+            <div class="info">
+                <span class="badge" th:text="${p.region}">Costa</span>
+                <h3 th:text="${p.nombre}">Ceviche</h3>
+                <p th:text="${p.descripcion}">Descripción...</p>
+                <div class="precio-accion">
+                    <strong th:text="'S/ ' + ${p.precio}">S/ 32.00</strong>
+                    <a th:href="@{/cliente/producto/{id}(id=${p.id})}" class="btn">Ver</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${productos.isEmpty()}" class="empty">
+        <p>No se encontraron productos con esos filtros.</p>
+    </div>
+
+</div>
+</body>
+</html>

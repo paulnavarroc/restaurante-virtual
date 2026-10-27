@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Admin</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-10">
+        <h1 class="mb-6 text-2xl font-bold">Dashboard</h1>
+
+        <div class="mb-8 grid gap-4 sm:grid-cols-3">
+            <div class="card p-6 text-center">
+                <span class="block text-3xl font-bold text-sky-600" th:text="${#lists.size(pedidosRecientes)}">0</span>
+                <span class="text-sm text-slate-500">Pedidos activos</span>
+            </div>
+            <a th:href="@{/admin/productos}" class="card p-6 text-center transition hover:border-sky-300">
+                <i class="bi bi-egg-fried text-2xl text-sky-600"></i>
+                <p class="mt-2 font-semibold text-sky-700">Gestionar productos</p>
+            </a>
+            <a th:href="@{/admin/reportes}" class="card p-6 text-center transition hover:border-sky-300">
+                <i class="bi bi-graph-up text-2xl text-sky-600"></i>
+                <p class="mt-2 font-semibold text-sky-700">Ver reportes</p>
+            </a>
+        </div>
+
+        <h2 class="mb-3 font-semibold">Pedidos recientes</h2>
+        <div class="card overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="border-b border-slate-100 bg-slate-50 text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">#</th>
+                    <th class="px-4 py-3">Fecha</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3">Total</th>
+                    <th class="px-4 py-3">Dirección</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${pedidosRecientes}" class="border-b border-slate-50">
+                    <td class="px-4 py-3" th:text="${p.id}"></td>
+                    <td class="px-4 py-3" th:text="${#temporals.format(p.fechaPedido, 'dd/MM HH:mm')}"></td>
+                    <td class="px-4 py-3"><span class="badge" th:text="${p.estado}"></span></td>
+                    <td class="px-4 py-3" th:text="'S/ ' + ${p.total}"></td>
+                    <td class="max-w-[200px] truncate px-4 py-3" th:text="${p.direccion}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

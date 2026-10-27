@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Detalle</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-10">
+        <a th:href="@{/menu}" class="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-sky-700">
+            <i class="bi bi-arrow-left"></i> Volver al menú
+        </a>
+
+        <div class="grid gap-8 md:grid-cols-2" th:if="${producto != null}">
+            <img th:src="${producto.imagenUrl}" th:alt="${producto.nombre}"
+                 class="h-80 w-full rounded-2xl object-cover shadow-sm ring-1 ring-slate-200">
+
+            <div>
+                <div class="mb-3 flex flex-wrap gap-2">
+                    <span class="badge" th:text="${producto.region}">Costa</span>
+                    <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"
+                          th:text="${producto.categoria}">Entradas</span>
+                </div>
+                <h1 class="text-3xl font-bold text-slate-900" th:text="${producto.nombre}">Ceviche</h1>
+                <p class="mt-3 text-slate-600" th:text="${producto.descripcion}">...</p>
+                <p th:if="${producto.tiempoPreparacion != null}" class="mt-3 text-sm text-slate-400">
+                    <i class="bi bi-clock"></i>
+                    <span th:text="${producto.tiempoPreparacion}">15</span> min aprox.
+                </p>
+                <p class="mt-4 text-2xl font-bold text-sky-700"
+                   th:text="'S/ ' + ${#numbers.formatDecimal(producto.precio, 1, 2)}">S/ 32.00</p>
+
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <form sec:authorize="isAuthenticated()" th:if="${producto.disponible}"
+                          th:action="@{/cliente/carrito/agregar}" method="post" class="flex items-center gap-2">
+                        <input type="hidden" name="productoId" th:value="${producto.id}">
+                        <input type="number" name="cantidad" value="1" min="1" max="20"
+                               class="input !w-20">
+                        <button type="submit" class="btn-primary">
+                            <i class="bi bi-cart-plus"></i> Agregar al carrito
+                        </button>
+                    </form>
+                    <a sec:authorize="!isAuthenticated()" th:href="@{/login}" class="btn-primary">
+                        Entrar para pedir
+                    </a>
+                    <span th:if="${producto.disponible == false}" class="text-sm font-medium text-red-600">No disponible</span>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

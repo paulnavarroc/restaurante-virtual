@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Nueva dirección</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-lg px-4 py-10">
+        <h1 class="mb-6 text-2xl font-bold">Nueva dirección</h1>
+        <form th:action="@{/cliente/direcciones}" th:object="${direccion}" method="post" class="card space-y-4 p-6">
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Alias</label>
+                <input type="text" th:field="*{alias}" class="input" placeholder="Casa, Oficina...">
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Dirección completa *</label>
+                <input type="text" th:field="*{direccionCompleta}" required class="input">
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Referencia</label>
+                <input type="text" th:field="*{referencia}" class="input">
+            </div>
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Distrito *</label>
+                <input type="text" th:field="*{distrito}" required class="input">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Provincia</label>
+                    <input type="text" th:field="*{provincia}" class="input" value="Lima">
+                </div>
+                <div>
+                    <label class="mb-1.5 block text-sm font-medium">Departamento</label>
+                    <input type="text" th:field="*{departamento}" class="input" value="Lima">
+                </div>
+            </div>
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" th:field="*{esPrincipal}" class="rounded border-slate-300 text-sky-600">
+                Marcar como principal
+            </label>
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn-primary">Guardar</button>
+                <a th:href="@{/cliente/direcciones}" class="btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

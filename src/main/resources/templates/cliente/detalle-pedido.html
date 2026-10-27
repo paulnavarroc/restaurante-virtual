@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Pedido</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-3xl px-4 py-10">
+        <a th:href="@{/cliente/pedidos}" class="mb-4 inline-flex text-sm text-slate-500 hover:text-sky-700">
+            ← Mis pedidos
+        </a>
+
+        <div class="mb-6 flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl font-bold" th:text="'Pedido #' + ${pedido.id}"></h1>
+            <span class="badge" th:text="${pedido.estado}"></span>
+        </div>
+        <p class="mb-8 text-sm text-slate-500"
+           th:text="'Realizado el ' + ${#temporals.format(pedido.fechaPedido, 'dd/MM/yyyy HH:mm')}"></p>
+
+        <!-- Timeline simple -->
+        <div class="card mb-6 p-5">
+            <h2 class="mb-4 font-semibold">Seguimiento</h2>
+            <ol class="space-y-3 text-sm">
+                <li class="flex gap-2" th:classappend="${pedido.estado != 'CANCELADO'} ? 'text-sky-700 font-medium' : 'text-slate-400'">
+                    <i class="bi bi-check-circle"></i> Confirmado
+                </li>
+                <li class="flex gap-2"
+                    th:classappend="${pedido.estado == 'EN_PREPARACION' or pedido.estado == 'LISTO' or pedido.estado == 'EN_CAMINO' or pedido.estado == 'ENTREGADO'} ? 'text-sky-700 font-medium' : 'text-slate-400'">
+                    <i class="bi bi-fire"></i> En preparación
+                </li>
+                <li class="flex gap-2"
+                    th:classappend="${pedido.estado == 'LISTO' or pedido.estado == 'EN_CAMINO' or pedido.estado == 'ENTREGADO'} ? 'text-sky-700 font-medium' : 'text-slate-400'">
+                    <i class="bi bi-box-seam"></i> Listo
+                </li>
+                <li class="flex gap-2"
+                    th:classappend="${pedido.estado == 'EN_CAMINO' or pedido.estado == 'ENTREGADO'} ? 'text-sky-700 font-medium' : 'text-slate-400'">
+                    <i class="bi bi-bicycle"></i> En camino
+                </li>
+                <li class="flex gap-2"
+                    th:classappend="${pedido.estado == 'ENTREGADO'} ? 'text-sky-700 font-medium' : 'text-slate-400'">
+                    <i class="bi bi-house-check"></i> Entregado
+                </li>
+            </ol>
+        </div>
+
+        <div class="card mb-6 p-5">
+            <h2 class="mb-2 font-semibold"><i class="bi bi-geo-alt text-sky-600"></i> Dirección</h2>
+            <p class="text-slate-600" th:text="${pedido.direccion}"></p>
+        </div>
+
+        <div class="card p-5">
+            <h2 class="mb-4 font-semibold">Detalle</h2>
+            <div th:each="item : ${pedido.items}" class="flex justify-between border-b border-slate-50 py-2 text-sm">
+                <span th:text="${item.cantidad} + '× ' + ${item.nombreProducto}"></span>
+                <span th:text="'S/ ' + ${item.subtotal}"></span>
+            </div>
+            <div class="mt-4 space-y-1 text-right text-sm">
+                <p>Subtotal: <span th:text="'S/ ' + ${pedido.subtotal}"></span></p>
+                <p>Delivery: <span th:text="'S/ ' + ${pedido.costoDelivery}"></span></p>
+                <p class="text-lg font-bold text-sky-700">Total: <span th:text="'S/ ' + ${pedido.total}"></span></p>
+            </div>
+        </div>
+
+        <div th:if="${pedido.estado == 'ENTREGADO'}" class="mt-6 rounded-2xl bg-emerald-50 p-6 text-center text-emerald-800">
+            <p class="font-semibold">¡Pedido entregado! Buen provecho.</p>
+            <a th:href="@{/menu}" class="btn-primary mt-4 inline-flex">Hacer otro pedido</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

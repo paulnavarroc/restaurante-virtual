@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="es">
+<head>
+    <title>Iniciar sesión</title>
+</head>
+<body>
+
+<main layout:fragment="content">
+    <section class="mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center px-4 py-10">
+        <div class="w-full max-w-md">
+
+            <!-- Cabecera -->
+            <div class="mb-8 text-center">
+                <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-sky-600">
+                    <i class="bi bi-person-circle text-2xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-slate-900">Iniciar sesión</h1>
+                <p class="mt-1 text-sm text-slate-500">
+                    Accede para pedir y seguir tus entregas
+                </p>
+            </div>
+
+            <!-- Card -->
+            <div class="card p-6 sm:p-8">
+
+                <div th:if="${error}"
+                     class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800"
+                     th:text="${error}">
+                </div>
+                <div th:if="${mensaje}"
+                     class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+                     th:text="${mensaje}">
+                </div>
+
+                <form th:action="@{/perform_login}" method="post" class="space-y-4">
+                    <div>
+                        <label for="correo" class="mb-1.5 block text-sm font-medium text-slate-700">
+                            Correo electrónico
+                        </label>
+                        <div class="relative">
+                            <i class="bi bi-envelope absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input id="correo"
+                                   type="email"
+                                   name="correo"
+                                   required
+                                   autocomplete="username"
+                                   placeholder="tu@email.com"
+                                   class="input pl-10">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="mb-1.5 block text-sm font-medium text-slate-700">
+                            Contraseña
+                        </label>
+                        <div class="relative">
+                            <i class="bi bi-lock absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input id="password"
+                                   type="password"
+                                   name="password"
+                                   required
+                                   autocomplete="current-password"
+                                   placeholder="••••••••"
+                                   class="input pl-10">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full">
+                        <i class="bi bi-box-arrow-in-right"></i>
+                        Entrar
+                    </button>
+                </form>
+
+                <p class="mt-6 text-center text-sm text-slate-500">
+                    ¿No tienes cuenta?
+                    <a th:href="@{/registro}" class="font-semibold text-sky-700 hover:text-sky-800">
+                        Regístrate
+                    </a>
+                </p>
+            </div>
+
+            <p class="mt-6 text-center text-xs text-slate-400">
+                <a th:href="@{/menu}" class="hover:text-sky-700">
+                    ← Volver al menú
+                </a>
+            </p>
+        </div>
+    </section>
+</main>
+
+</body>
+</html>

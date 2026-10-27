@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}">
+<body>
+<div th:fragment="content">
+
+    <a th:href="@{/cocina/pedidos}">← Volver a pedidos</a>
+
+    <h1>Pedido #<span th:text="${pedido.id}"></span></h1>
+    <p>
+        Estado actual:
+        <span class="badge" th:text="${pedido.estado}"></span>
+    </p>
+    <p th:text="'Hora: ' + ${#temporals.format(pedido.fechaPedido, 'dd/MM/yyyy HH:mm')}"></p>
+
+    <div class="info-box">
+        <h3>Productos a preparar</h3>
+        <table class="tabla-simple">
+            <thead>
+            <tr>
+                <th>Cantidad</th>
+                <th>Producto</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${pedido.items}">
+                <td><strong th:text="${item.cantidad}"></strong></td>
+                <td th:text="${item.nombreProducto}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div th:if="${pedido.observaciones != null and !pedido.observaciones.isEmpty()}" class="info-box">
+        <h3>Observaciones del cliente</h3>
+        <p th:text="${pedido.observaciones}"></p>
+    </div>
+
+    <!-- Cambiar estado -->
+    <div class="info-box">
+        <h3>Actualizar estado</h3>
+        <form th:action="@{/cocina/pedido/{id}/estado(id=${pedido.id})}" method="post">
+            <div class="form-group">
+                <label>Nuevo estado</label>
+                <select name="nuevoEstado" required>
+                    <option value="EN_PREPARACION">En preparación</option>
+                    <option value="LISTO">Listo para despacho</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Observación (opcional)</label>
+                <input type="text" name="observacion" placeholder="Ej: listo, falta salsa...">
+            </div>
+            <button type="submit" class="btn">Actualizar estado</button>
+        </form>
+    </div>
+
+</div>
+</body>
+</html>

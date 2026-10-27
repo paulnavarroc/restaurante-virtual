@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Direcciones</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-3xl px-4 py-10">
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-2xl font-bold">Mis direcciones</h1>
+            <a th:href="@{/cliente/direcciones/nueva}" class="btn-primary !text-sm">
+                <i class="bi bi-plus-lg"></i> Nueva
+            </a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(direcciones)}" class="card py-12 text-center text-slate-500">
+            No tienes direcciones. <a th:href="@{/cliente/direcciones/nueva}" class="text-sky-700">Agregar una</a>
+        </div>
+
+        <div class="space-y-3">
+            <div th:each="d : ${direcciones}" class="card flex flex-wrap items-start justify-between gap-4 p-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <strong th:text="${d.alias != null ? d.alias : 'Sin alias'}">Casa</strong>
+                        <span th:if="${d.esPrincipal}" class="badge">Principal</span>
+                    </div>
+                    <p class="mt-1 text-sm text-slate-600" th:text="${d.direccionCompleta}"></p>
+                    <p class="text-xs text-slate-400"
+                       th:text="${d.distrito + ', ' + d.provincia + ' – ' + d.departamento}"></p>
+                </div>
+                <div class="flex gap-2">
+                    <form th:if="${!d.esPrincipal}" th:action="@{/cliente/direcciones/{id}/principal(id=${d.id})}" method="post">
+                        <button class="btn-secondary !text-xs">Principal</button>
+                    </form>
+                    <form th:action="@{/cliente/direcciones/{id}/eliminar(id=${d.id})}" method="post"
+                          onsubmit="return confirm('¿Eliminar dirección?')">
+                        <button class="btn-ghost !text-red-600 !text-xs"><i class="bi bi-trash"></i></button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

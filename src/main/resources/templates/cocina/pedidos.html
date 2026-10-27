@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Cocina</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-10">
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-2xl font-bold"><i class="bi bi-fire text-sky-600"></i> Pedidos cocina</h1>
+            <a th:href="@{/cocina/pedidos}" class="btn-secondary !text-xs"><i class="bi bi-arrow-clockwise"></i> Actualizar</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(pedidos)}" class="card py-16 text-center text-slate-500">
+            No hay pedidos pendientes.
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div th:each="p : ${pedidos}"
+                 class="card border-2 p-5"
+                 th:classappend="${p.estado == 'PENDIENTE' or p.estado == 'CONFIRMADO'} ? 'border-sky-400' : 'border-slate-200'">
+                <div class="mb-3 flex flex-wrap items-center gap-2">
+                    <strong th:text="'#' + ${p.id}"></strong>
+                    <span class="badge" th:text="${p.estado}"></span>
+                    <span class="text-xs text-slate-400" th:text="${#temporals.format(p.fechaPedido, 'HH:mm')}"></span>
+                </div>
+                <ul class="mb-3 space-y-1 text-sm">
+                    <li th:each="item : ${p.items}">
+                        <strong th:text="${item.cantidad} + '×'"></strong>
+                        <span th:text="${item.nombreProducto}"></span>
+                    </li>
+                </ul>
+                <p th:if="${p.observaciones != null and !p.observaciones.isEmpty()}"
+                   class="mb-3 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-800"
+                   th:text="'📝 ' + ${p.observaciones}"></p>
+
+                <div class="flex flex-wrap gap-2">
+                    <form th:if="${p.estado == 'PENDIENTE' or p.estado == 'CONFIRMADO'}"
+                          th:action="@{/cocina/pedido/{id}/estado(id=${p.id})}" method="post">
+                        <input type="hidden" name="nuevoEstado" value="EN_PREPARACION">
+                        <button class="btn-primary !text-xs">Iniciar preparación</button>
+                    </form>
+                    <form th:if="${p.estado == 'EN_PREPARACION'}"
+                          th:action="@{/cocina/pedido/{id}/estado(id=${p.id})}" method="post">
+                        <input type="hidden" name="nuevoEstado" value="LISTO">
+                        <button class="inline-flex rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
+                            Marcar LISTO
+                        </button>
+                    </form>
+                    <a th:href="@{/cocina/pedido/{id}(id=${p.id})}" class="btn-ghost !text-xs">Detalle</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>setTimeout(() => location.reload(), 20000);</script>
+</main>
+</body>
+</html>

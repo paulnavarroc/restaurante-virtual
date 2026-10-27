@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title></title></head>
+<body>
+<main layout:fragment="content" class="min-h-[75vh] flex items-center justify-center px-4 py-12 bg-slate-50">
+    <section class="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm sm:p-12">
+        <div class="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+            <i class="bi bi-fire text-4xl"></i>
+        </div>
+        <h1 class="text-7xl font-extrabold tracking-tight text-sky-600">500</h1>
+        <h2 class="mt-4 text-2xl font-bold text-slate-800">¡Algo salió mal!</h2>
+
+        <p class="mx-auto mt-3 max-w-sm text-sm leading-6 text-slate-500">
+            Ocurrió un error interno en el servidor.
+            Estamos trabajando para solucionar el problema.
+        </p>
+
+        <div th:if="${error != null}" class="mt-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-left text-sm text-amber-800">
+            <p class="font-semibold">Detalle del error</p>
+            <p class="mt-1 break-words" th:text="${error}">Ocurrió un error inesperado</p>
+        </div>
+
+        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <a th:href="@{/}" class="inline-flex items-center justify-center gap-2 rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+                <i class="bi bi-house-door"></i>Volver al inicio
+            </a>
+            <button type="button" onclick="window.location.reload()" class="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                <i class="bi bi-arrow-clockwise"></i> Reintentar
+            </button>
+        </div>
+        <p class="mt-8 text-xs text-slate-400">Error 500 · Error interno del servidor</p>
+    </section>
+</main>
+</body>
+</html>

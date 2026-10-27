@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Entregas</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-10">
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-2xl font-bold"><i class="bi bi-bicycle text-sky-600"></i> Entregas</h1>
+            <a th:href="@{/repartidor/entregas}" class="btn-secondary !text-xs">Actualizar</a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(pedidos)}" class="card py-16 text-center text-slate-500">
+            No hay entregas pendientes.
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2">
+            <div th:each="p : ${pedidos}" class="card border-2 p-5"
+                 th:classappend="${p.estado == 'LISTO'} ? 'border-emerald-400' : 'border-sky-400'">
+                <div class="mb-2 flex items-center gap-2">
+                    <strong th:text="'#' + ${p.id}"></strong>
+                    <span class="badge" th:text="${p.estado}"></span>
+                </div>
+                <p class="mb-3 rounded-lg bg-slate-50 px-3 py-2 text-sm">
+                    <i class="bi bi-geo-alt text-sky-600"></i>
+                    <span th:text="${p.direccion}"></span>
+                </p>
+                <ul class="mb-3 text-sm text-slate-600">
+                    <li th:each="item : ${p.items}" th:text="${item.cantidad} + '× ' + ${item.nombreProducto}"></li>
+                </ul>
+                <p class="mb-4 font-semibold text-sky-700" th:text="'Total S/ ' + ${p.total}"></p>
+
+                <div class="flex flex-wrap gap-2">
+                    <form th:if="${p.estado == 'LISTO'}" th:action="@{/repartidor/entrega/{id}/estado(id=${p.id})}" method="post">
+                        <input type="hidden" name="nuevoEstado" value="EN_CAMINO">
+                        <button class="btn-primary !text-xs">Recoger y salir</button>
+                    </form>
+                    <form th:if="${p.estado == 'EN_CAMINO'}" th:action="@{/repartidor/entrega/{id}/estado(id=${p.id})}" method="post"
+                          onsubmit="return confirm('¿Confirmar entrega?')">
+                        <input type="hidden" name="nuevoEstado" value="ENTREGADO">
+                        <button class="inline-flex rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700">
+                            Confirmar entrega
+                        </button>
+                    </form>
+                    <a th:href="@{/repartidor/entrega/{id}(id=${p.id})}" class="btn-ghost !text-xs">Detalle</a>
+                </div>
+            </div>
+        </div>
+    </section>
+    <script>setTimeout(() => location.reload(), 20000);</script>
+</main>
+</body>
+</html>

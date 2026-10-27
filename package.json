@@ -1,0 +1,18 @@
+{
+  "name": "restaurante-virtual",
+  "version": "1.0.0",
+  "description": "Aplicación web para la gestión de un restaurante virtual (Dark Kitchen) de comida regional peruana (Costa, Sierra y Selva).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "css:dev": "tailwindcss -i ./src/main/resources/static/css/input.css -o ./src/main/resources/static/css/app.css --watch",
+    "css:build": "tailwindcss -i ./src/main/resources/static/css/input.css -o ./src/main/resources/static/css/app.css --minify"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.3",
+    "tailwindcss": "^4.3.3"
+  }
+}

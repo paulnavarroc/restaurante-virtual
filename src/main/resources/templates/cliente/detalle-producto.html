@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}">
+<body>
+<div th:fragment="content">
+
+    <a th:href="@{/cliente/catalogo}">← Volver al catálogo</a>
+
+    <form th:action="@{/cliente/carrito/agregar}" method="post" th:if="${producto.disponible}">
+        <input type="hidden" name="productoId" th:value="${producto.id}">
+        <label>Cantidad:</label>
+        <input type="number" name="cantidad" value="1" min="1" max="20" style="width:60px">
+        <button type="submit" class="btn">Agregar al carrito</button>
+    </form>
+
+    <div class="detalle-producto" th:if="${producto != null}">
+        <img th:src="${producto.imagenUrl}" th:alt="${producto.nombre}" class="img-grande">
+
+        <div class="info">
+            <span class="badge" th:text="${producto.region}"></span>
+            <span class="badge" th:text="${producto.categoria}"></span>
+
+            <h1 th:text="${producto.nombre}">Ceviche Clásico</h1>
+            <p th:text="${producto.descripcion}"></p>
+
+            <p th:if="${producto.tiempoPreparacion != null}">
+                ⏱ Tiempo estimado: <span th:text="${producto.tiempoPreparacion}"></span> min
+            </p>
+
+            <h2 th:text="'S/ ' + ${producto.precio}">S/ 32.00</h2>
+
+            <p th:if="${producto.disponible}">
+                <span class="disponible">Disponible</span>
+            </p>
+            <p th:unless="${producto.disponible}">
+                <span class="no-disponible">No disponible</span>
+            </p>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>

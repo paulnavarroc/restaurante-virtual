@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Mis pedidos</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-10">
+        <h1 class="mb-6 text-2xl font-bold">Mis pedidos</h1>
+
+        <div th:if="${pedidos == null or #lists.isEmpty(pedidos)}" class="card py-16 text-center">
+            <p class="text-slate-500">Aún no has realizado pedidos.</p>
+            <a th:href="@{/menu}" class="btn-primary mt-4 inline-flex">Ver menú</a>
+        </div>
+
+        <div class="space-y-3" th:if="${pedidos != null and !#lists.isEmpty(pedidos)}">
+            <div th:each="p : ${pedidos}" class="card flex flex-wrap items-center justify-between gap-4 p-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <strong th:text="'Pedido #' + ${p.id}"></strong>
+                        <span class="badge" th:text="${p.estado}"></span>
+                    </div>
+                    <p class="mt-1 text-sm text-slate-500"
+                       th:text="${#temporals.format(p.fechaPedido, 'dd/MM/yyyy HH:mm')}"></p>
+                    <p class="text-sm" th:text="${#lists.size(p.items)} + ' producto(s) · S/ ' + ${p.total}"></p>
+                </div>
+                <a th:href="@{/cliente/pedido/{id}(id=${p.id})}" class="btn-secondary !text-xs">Ver detalle</a>
+            </div>
+        </div>
+    </section>
+</main>
+</body>
+</html>

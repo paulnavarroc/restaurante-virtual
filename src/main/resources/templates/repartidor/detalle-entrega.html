@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/base :: html}">
+<body>
+<div th:fragment="content">
+
+    <a th:href="@{/repartidor/entregas}">← Volver a entregas</a>
+
+    <h1>Entrega #<span th:text="${pedido.id}"></span></h1>
+    <p>
+        Estado:
+        <span class="badge" th:text="${pedido.estado}"></span>
+    </p>
+
+    <div class="info-box">
+        <h3>📍 Dirección de entrega</h3>
+        <p th:text="${pedido.direccion}"></p>
+    </div>
+
+    <div class="info-box">
+        <h3>Productos</h3>
+        <ul>
+            <li th:each="item : ${pedido.items}">
+                <strong th:text="${item.cantidad} + 'x'"></strong>
+                <span th:text="${item.nombreProducto}"></span>
+                <span th:text="'S/ ' + ${item.subtotal}"></span>
+            </li>
+        </ul>
+        <p class="total"><strong th:text="'Total: S/ ' + ${pedido.total}"></strong></p>
+    </div>
+
+    <div th:if="${pedido.observaciones != null and !pedido.observaciones.isEmpty()}" class="info-box">
+        <h3>Observaciones</h3>
+        <p th:text="${pedido.observaciones}"></p>
+    </div>
+
+    <!-- Acciones de estado -->
+    <div class="info-box">
+        <h3>Actualizar estado</h3>
+
+        <form th:if="${pedido.estado == 'LISTO'}"
+              th:action="@{/repartidor/entrega/{id}/estado(id=${pedido.id})}" method="post">
+            <input type="hidden" name="nuevoEstado" value="EN_CAMINO">
+            <button type="submit" class="btn">🛵 Recoger pedido y salir</button>
+        </form>
+
+        <form th:if="${pedido.estado == 'EN_CAMINO'}"
+              th:action="@{/repartidor/entrega/{id}/estado(id=${pedido.id})}" method="post"
+              onsubmit="return confirm('¿Confirmas que el pedido fue entregado?')">
+            <input type="hidden" name="nuevoEstado" value="ENTREGADO">
+            <div class="form-group">
+                <label>Observación (opcional)</label>
+                <input type="text" name="observacion" placeholder="Ej: entregado en recepción">
+            </div>
+            <button type="submit" class="btn btn-exito">✅ Confirmar entrega</button>
+        </form>
+
+        <div th:if="${pedido.estado == 'ENTREGADO'}" class="exito">
+            <p>Este pedido ya fue entregado.</p>
+        </div>
+    </div>
+
+</div>
+</body>
+</html>
