@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface CategoriaRepository extends JpaRepository<Categoria, Integer> {
     Optional<Categoria> findByNombre(String nombre);
     List<Categoria> findByActivoTrue();
+    List<Categoria> findByActivoTrueOrderByNombreAsc();
 }

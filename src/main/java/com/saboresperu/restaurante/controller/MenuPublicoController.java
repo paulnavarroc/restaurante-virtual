@@ -1,29 +1,50 @@
 package com.saboresperu.restaurante.controller;
 
+import com.saboresperu.restaurante.service.interfaces.MenuDiaService;
 import com.saboresperu.restaurante.service.interfaces.ProductoService;
+import com.saboresperu.restaurante.service.interfaces.SedeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 @Controller
 @RequiredArgsConstructor
 public class MenuPublicoController {
-/*
+
+    private final MenuDiaService menuDiaService;
+    private final SedeService sedeService;
     private final ProductoService productoService;
 
-    @GetMapping({"/", "/home", "/menu", "/catalogo"})
-    public String menu(@RequestParam(required = false) Integer regionId,
-                       @RequestParam(required = false) Integer categoriaId,
-                       @RequestParam(required = false) String busqueda,
+    @GetMapping({"/", "/menu"})
+    public String menu(@RequestParam(required = false) Integer sedeId,
+                       @RequestParam(required = false)
+                       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fecha,
                        Model model) {
-        model.addAttribute("productos", productoService.listarDisponibles(regionId, categoriaId, busqueda));
-        model.addAttribute("regionId", regionId);
-        model.addAttribute("categoriaId", categoriaId);
-        model.addAttribute("busqueda", busqueda);
-        model.addAttribute("titulo", "Menú – Sabores Perú");
+
+        if (sedeId == null) {
+            var sedes = sedeService.listarActivas();
+            if (sedes.isEmpty()) {
+                model.addAttribute("error", "No hay sedes activas");
+                return "public/menu";
+            }
+            sedeId = sedes.get(0).getId();
+        }
+        if (fecha == null) {
+            fecha = LocalDate.now();
+        }
+
+        try {
+            model.addAttribute("menu", menuDiaService.obtenerPublicado(sedeId, fecha));
+        } catch (Exception e) {
+            model.addAttribute("error", e.getMessage());
+        }
+        model.addAttribute("sedes", sedeService.listarActivas());
+        model.addAttribute("sedeId", sedeId);
+        model.addAttribute("fecha", fecha);
         return "public/menu";
     }
 
@@ -33,6 +54,4 @@ public class MenuPublicoController {
         model.addAttribute("producto", productoService.obtenerPorId(id));
         return "public/detalle-producto";
     }
-
- */
 }

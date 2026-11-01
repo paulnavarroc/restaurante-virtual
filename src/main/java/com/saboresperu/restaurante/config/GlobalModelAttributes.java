@@ -15,11 +15,7 @@ public class GlobalModelAttributes {
 
     @ModelAttribute("carritoCount")
     public int carritoCount(HttpSession session) {
-        try {
-            CarritoDTO carrito = carritoService.obtenerCarrito(session);
-            return carrito.getTotalItems();
-        } catch (Exception e) {
-            return 0;
-        }
+        CarritoDTO c = carritoService.obtener(session);
+        return c.getTotalUnidades();
     }
 }

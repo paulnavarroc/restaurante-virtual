@@ -12,10 +12,9 @@ import lombok.NoArgsConstructor;
 public class DireccionDTO {
     private Integer id;
     private String alias;
-    private String direccionCompleta;
-    private String referencia;
+    private String calle;
+    private String numero;
     private String distrito;
-    private String provincia;
-    private String departamento;
     private Boolean esPrincipal;
+    private String resumen;
 }

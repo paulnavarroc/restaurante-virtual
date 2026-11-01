@@ -13,29 +13,31 @@
                 <h2 class="mb-4 font-semibold">Tu pedido</h2>
                 <div th:each="item : ${carrito.items}" class="flex justify-between border-b border-slate-50 py-2 text-sm">
                     <span th:text="${item.cantidad} + '× ' + ${item.nombre}"></span>
-                    <span th:text="'S/ ' + ${item.subtotal}"></span>
+                    <span th:text="'S/ ' + ${#numbers.formatDecimal(item.subtotal,1,2)}"></span>
                 </div>
-                <div class="mt-4 space-y-1 text-sm">
-                    <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span th:text="'S/ ' + ${carrito.subtotal}"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Delivery</span><span th:text="'S/ ' + ${carrito.costoDelivery}"></span></div>
-                    <div class="flex justify-between text-base font-bold text-sky-700">
-                        <span>Total</span><span th:text="'S/ ' + ${carrito.total}"></span>
-                    </div>
+                <div class="mt-4 flex justify-between font-semibold">
+                    <span>Subtotal</span>
+                    <span class="text-sky-700"
+                          th:text="'S/ ' + ${#numbers.formatDecimal(carrito.subtotal,1,2)}"></span>
                 </div>
             </div>
 
             <div class="card p-5">
                 <form th:action="@{/cliente/carrito/confirmar}" method="post" class="space-y-4">
                     <div>
-                        <label class="mb-1.5 block text-sm font-medium">Dirección de entrega *</label>
+                        <label class="mb-1.5 block text-sm font-medium">Dirección *</label>
                         <select name="direccionId" required class="input">
-                            <option value="">Selecciona una dirección</option>
-                            <option th:each="d : ${direcciones}" th:value="${d.id}"
+                            <option value="">Selecciona</option>
+                            <option th:each="d : ${direcciones}"
+                                    th:value="${d.id}"
                                     th:selected="${d.esPrincipal}"
-                                    th:text="${(d.alias != null ? d.alias + ' – ' : '') + d.direccionCompleta}"></option>
+                                    th:text="${d.resumen}"></option>
                         </select>
-                        <a th:href="@{/cliente/direcciones/nueva}" class="mt-1 inline-block text-xs text-sky-700">+ Nueva dirección</a>
+                        <a th:href="@{/cliente/direcciones/nueva}" class="mt-1 inline-block text-xs text-sky-700">
+                            + Nueva dirección
+                        </a>
                     </div>
+                    <input type="text" name="codigoCupon" class="input" placeholder="Código de descuento">
                     <div>
                         <label class="mb-1.5 block text-sm font-medium">Método de pago *</label>
                         <select name="metodoPagoId" required class="input">
@@ -48,11 +50,10 @@
                     </div>
                     <div>
                         <label class="mb-1.5 block text-sm font-medium">Observaciones</label>
-                        <textarea name="observaciones" rows="3" class="input" placeholder="Sin cebolla, tocar timbre..."></textarea>
+                        <textarea name="observaciones" rows="3" class="input"
+                                  placeholder="Indicaciones al repartidor..."></textarea>
                     </div>
-                    <button type="submit" class="btn-primary w-full">
-                        <i class="bi bi-check2-circle"></i> Confirmar y pedir
-                    </button>
+                    <button type="submit" class="btn-primary w-full">Confirmar pedido</button>
                 </form>
             </div>
         </div>

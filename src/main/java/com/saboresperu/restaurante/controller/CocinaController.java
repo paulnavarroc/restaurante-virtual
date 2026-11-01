@@ -1,10 +1,9 @@
 package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.CambiarEstadoPedidoDTO;
-import com.saboresperu.restaurante.dto.PedidoResponseDTO;
 import com.saboresperu.restaurante.service.interfaces.PedidoService;
+import com.saboresperu.restaurante.service.interfaces.SedeService;
 import com.saboresperu.restaurante.util.SecurityUtils;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,49 +18,42 @@ import java.util.List;
 public class CocinaController {
 
     private final PedidoService pedidoService;
+    private final SedeService sedeService;
     private final SecurityUtils securityUtils;
 
-    @GetMapping({"", "/", "/pedidos"})
-    public String pedidosPendientes(Model model) {
-        // Estados que ve cocina
-        List<PedidoResponseDTO> pedidos = pedidoService.listarPorEstados(
-                List.of("PENDIENTE", "CONFIRMADO", "EN_PREPARACION")
-        );
-        model.addAttribute("pedidos", pedidos);
-        return "cocina/pedidos";
-    }
-
-    @GetMapping("/pedido/{id}")
-    public String detallePedido(@PathVariable Integer id, Model model) {
-        // En un sistema real validarías permisos, aquí simplificado
-        List<PedidoResponseDTO> todos = pedidoService.listarPorEstados(
+    @GetMapping("/pedidos")
+    public String pedidos(@RequestParam(required = false) Integer sedeId, Model model) {
+        if (sedeId == null) {
+            sedeId = sedeService.listarActivas().stream().findFirst().map(s -> s.getId()).orElse(null);
+        }
+        if (sedeId == null) {
+            model.addAttribute("error", "No hay sede");
+            return "cocina/pedidos";
+        }
+        model.addAttribute("sedeId", sedeId);
+        model.addAttribute("pedidos", pedidoService.listarPorEstadosYSede(
+                sedeId,
                 List.of("PENDIENTE", "CONFIRMADO", "EN_PREPARACION", "LISTO")
-        );
-        PedidoResponseDTO pedido = todos.stream()
-                .filter(p -> p.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Pedido no encontrado"));
-
-        model.addAttribute("pedido", pedido);
-        model.addAttribute("cambioEstado", new CambiarEstadoPedidoDTO());
-        return "cocina/detalle-pedido";
+        ));
+        return "cocina/pedidos";
     }
 
     @PostMapping("/pedido/{id}/estado")
     public String cambiarEstado(@PathVariable Integer id,
                                 @RequestParam String nuevoEstado,
                                 @RequestParam(required = false) String observacion,
-                                RedirectAttributes redirectAttributes) {
-
-        CambiarEstadoPedidoDTO dto = new CambiarEstadoPedidoDTO();
-        dto.setNuevoEstado(nuevoEstado);
-        dto.setObservacion(observacion);
-
-        Integer usuarioId = securityUtils.getUsuarioIdActual();
-        pedidoService.cambiarEstado(id, dto, usuarioId);
-
-        redirectAttributes.addFlashAttribute("mensaje", "Estado actualizado a: " + nuevoEstado);
-        return "redirect:/cocina/pedidos";
+                                @RequestParam Integer sedeId,
+                                RedirectAttributes ra) {
+        try {
+            CambiarEstadoPedidoDTO dto = CambiarEstadoPedidoDTO.builder()
+                    .nuevoEstado(nuevoEstado)
+                    .observacion(observacion)
+                    .build();
+            pedidoService.cambiarEstado(id, dto, securityUtils.getUsuarioIdActual());
+            ra.addFlashAttribute("mensaje", "Pedido #" + id + " → " + nuevoEstado);
+        } catch (RuntimeException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/cocina/pedidos?sedeId=" + sedeId;
     }
-
 }

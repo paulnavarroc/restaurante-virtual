@@ -2,81 +2,107 @@ package com.saboresperu.restaurante.service.impl;
 
 import com.saboresperu.restaurante.dto.CarritoDTO;
 import com.saboresperu.restaurante.dto.CarritoItemDTO;
-import com.saboresperu.restaurante.entity.Producto;
+import com.saboresperu.restaurante.entity.MenuDiaItem;
 import com.saboresperu.restaurante.exception.BusinessException;
 import com.saboresperu.restaurante.exception.ResourceNotFoundException;
-import com.saboresperu.restaurante.repository.ProductoRepository;
+import com.saboresperu.restaurante.repository.MenuDiaItemRepository;
 import com.saboresperu.restaurante.service.interfaces.CarritoService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 public class CarritoServiceImpl implements CarritoService {
 
-    private static final String CARRITO_SESSION_KEY = "CARRITO";
-
-    private final ProductoRepository productoRepository;
+    private final MenuDiaItemRepository menuDiaItemRepository;
 
     @Override
-    public CarritoDTO obtenerCarrito(HttpSession session) {
-        CarritoDTO carrito = (CarritoDTO) session.getAttribute(CARRITO_SESSION_KEY);
+    public CarritoDTO obtener(HttpSession session) {
+        CarritoDTO carrito = (CarritoDTO) session.getAttribute(CarritoDTO.SESSION_KEY);
         if (carrito == null) {
-            carrito = new CarritoDTO();
-            session.setAttribute(CARRITO_SESSION_KEY, carrito);
+            carrito = CarritoDTO.builder().build();
+            session.setAttribute(CarritoDTO.SESSION_KEY, carrito);
         }
         return carrito;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public void agregarProducto(HttpSession session, Integer productoId, int cantidad) {
+    public void agregar(HttpSession session, Integer menuDiaItemId, int cantidad) {
         if (cantidad <= 0) {
-            throw new BusinessException("La cantidad debe ser mayor a 0");
+            throw new BusinessException("Cantidad inválida");
         }
 
-        Producto producto = productoRepository.findByIdWithDetails(productoId)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        MenuDiaItem item = menuDiaItemRepository.findByIdWithProducto(menuDiaItemId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ítem de menú no encontrado"));
 
-        if (!Boolean.TRUE.equals(producto.getDisponible()) || !Boolean.TRUE.equals(producto.getActivo())) {
-            throw new BusinessException("El producto no está disponible: " + producto.getNombre());
-        }
+        validarItemParaVenta(item);
 
-        CarritoDTO carrito = obtenerCarrito(session);
+        BigDecimal precio = item.getPrecioDia() != null
+                ? item.getPrecioDia()
+                : item.getProducto().getPrecioBase();
+        precio = precio.setScale(2, RoundingMode.HALF_UP);
 
-        CarritoItemDTO item = CarritoItemDTO.builder()
-                .productoId(producto.getId())
-                .nombre(producto.getNombre())
-                .imagenUrl(producto.getImagenUrl())
-                .precio(producto.getPrecio())
+        CarritoItemDTO linea = CarritoItemDTO.builder()
+                .productoId(item.getProducto().getId())
+                .menuDiaItemId(item.getId())
+                .nombre(item.getProducto().getNombre())
+                .imagenUrl(item.getProducto().getImagenUrl())
+                .precioUnitario(precio)
                 .cantidad(cantidad)
-                .region(producto.getRegion() != null ? producto.getRegion().getNombre() : null)
+                .sedeId(item.getMenuDia().getSede().getId())
                 .build();
 
-        carrito.agregarItem(item);
-        session.setAttribute("CARRITO", carrito);
+        CarritoDTO carrito = obtener(session);
+        try {
+            carrito.agregar(linea);
+        } catch (IllegalStateException ex) {
+            throw new BusinessException(ex.getMessage());
+        }
+        session.setAttribute(CarritoDTO.SESSION_KEY, carrito);
     }
 
     @Override
-    public void actualizarCantidad(HttpSession session, Integer productoId, int cantidad) {
-        CarritoDTO carrito = obtenerCarrito(session);
-        carrito.actualizarCantidad(productoId, cantidad);
-        session.setAttribute(CARRITO_SESSION_KEY, carrito);
+    public void actualizar(HttpSession session, Integer menuDiaItemId, int cantidad) {
+        CarritoDTO carrito = obtener(session);
+        carrito.actualizarCantidad(null, menuDiaItemId, cantidad);
+        session.setAttribute(CarritoDTO.SESSION_KEY, carrito);
     }
 
     @Override
-    public void eliminarProducto(HttpSession session, Integer productoId) {
-        CarritoDTO carrito = obtenerCarrito(session);
-        carrito.eliminarItem(productoId);
-        session.setAttribute(CARRITO_SESSION_KEY, carrito);
+    public void eliminar(HttpSession session, Integer menuDiaItemId) {
+        CarritoDTO carrito = obtener(session);
+        carrito.eliminar(null, menuDiaItemId);
+        session.setAttribute(CarritoDTO.SESSION_KEY, carrito);
     }
 
     @Override
     public void limpiar(HttpSession session) {
-        CarritoDTO carrito = obtenerCarrito(session);
+        CarritoDTO carrito = obtener(session);
         carrito.limpiar();
-        session.setAttribute(CARRITO_SESSION_KEY, carrito);
+        session.setAttribute(CarritoDTO.SESSION_KEY, carrito);
+    }
+
+    private void validarItemParaVenta(MenuDiaItem item) {
+        if (!"PUBLICADO".equals(item.getMenuDia().getEstado())) {
+            throw new BusinessException("El menú no está publicado");
+        }
+        if (!LocalDate.now().equals(item.getMenuDia().getFecha())) {
+            throw new BusinessException("Solo puedes pedir del menú de hoy");
+        }
+        if (!Boolean.TRUE.equals(item.getDisponible())) {
+            throw new BusinessException("Producto agotado: " + item.getProducto().getNombre());
+        }
+        if (item.getCupoMaximo() != null
+                && item.getCantidadVendida() != null
+                && item.getCantidadVendida() >= item.getCupoMaximo()) {
+            throw new BusinessException("Sin cupo para: " + item.getProducto().getNombre());
+        }
     }
 }

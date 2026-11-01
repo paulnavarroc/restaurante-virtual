@@ -2,13 +2,14 @@ package com.saboresperu.restaurante.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Clientes")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Cliente {
 
@@ -17,12 +18,9 @@ public class Cliente {
     @Column(name = "IdCliente")
     private Integer id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdUsuario", nullable = false, unique = true)
     private Usuario usuario;
-
-    @Column(name = "FechaNacimiento")
-    private LocalDate fechaNacimiento;
 
     @Column(name = "DocumentoTipo", length = 20)
     private String documentoTipo;

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Menú del día</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-5xl px-4 py-8">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <a th:href="@{/admin/menus(sedeId=${menu.sedeId})}" class="text-sm text-sky-700">← Volver</a>
+                <h1 class="text-2xl font-bold"
+                    th:text="${menu.sedeNombre} + ' · ' + ${menu.fecha}"></h1>
+                <span class="badge mt-1" th:text="${menu.estado}"></span>
+            </div>
+            <div class="flex gap-2">
+                <form th:if="${menu.estado != 'PUBLICADO' and menu.estado != 'CERRADO'}"
+                      th:action="@{/admin/menus/{id}/publicar(id=${menu.id})}" method="post">
+                    <button class="btn-primary">Publicar</button>
+                </form>
+                <form th:if="${menu.estado == 'PUBLICADO'}"
+                      th:action="@{/admin/menus/{id}/cerrar(id=${menu.id})}" method="post">
+                    <button class="btn-secondary">Cerrar menú</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Agregar plato -->
+        <form th:if="${menu.estado != 'CERRADO'}"
+              th:action="@{/admin/menus/{id}/items(id=${menu.id})}" method="post"
+              class="card mb-8 grid gap-3 p-4 md:grid-cols-2">
+            <div class="md:col-span-2">
+                <label class="mb-1 block text-sm font-medium">Producto</label>
+                <select name="productoId" class="input" required>
+                    <option value="">Selecciona</option>
+                    <option th:each="p : ${productos}" th:value="${p.id}"
+                            th:text="${p.nombre} + ' (S/ ' + ${p.precioBase} + ')'"></option>
+                </select>
+            </div>
+            <div>
+                <label class="mb-1 block text-sm font-medium">Precio del día (opcional)</label>
+                <input type="number" step="0.01" min="0" name="precioDia" class="input" placeholder="Usar precio base">
+            </div>
+            <div>
+                <label class="mb-1 block text-sm font-medium">Cupo máximo (opcional)</label>
+                <input type="number" min="1" name="cupoMaximo" class="input">
+            </div>
+            <div class="md:col-span-2">
+                <label class="mb-1 block text-sm font-medium">Turnos (vacío = todos)</label>
+                <div class="flex flex-wrap gap-3 text-sm">
+                    <label th:each="t : ${turnos}" class="flex items-center gap-1">
+                        <input type="checkbox" name="sedeTurnoIds" th:value="${t.id}">
+                        <span th:text="${t.turno} + ' (' + ${t.horaInicio} + '-' + ${t.horaFin} + ')'"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="md:col-span-2">
+                <button class="btn-primary">Agregar al menú</button>
+            </div>
+        </form>
+
+        <!-- Lista ítems -->
+        <div class="card overflow-hidden">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Plato</th>
+                    <th class="px-4 py-3">Precio</th>
+                    <th class="px-4 py-3">Cupo</th>
+                    <th class="px-4 py-3">Vendidos</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="i : ${menu.items}" class="border-t border-slate-100">
+                    <td class="px-4 py-3 font-medium" th:text="${i.productoNombre}"></td>
+                    <td class="px-4 py-3" th:text="'S/ ' + ${#numbers.formatDecimal(i.precioDia,1,2)}"></td>
+                    <td class="px-4 py-3" th:text="${i.cupoMaximo != null ? i.cupoMaximo : '—'}"></td>
+                    <td class="px-4 py-3" th:text="${i.cantidadVendida}"></td>
+                    <td class="px-4 py-3">
+                        <span th:if="${i.disponible}" class="text-emerald-600">Disponible</span>
+                        <span th:if="${!i.disponible}" class="text-red-600">Agotado</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="flex flex-wrap gap-1 justify-end">
+                            <form th:action="@{/admin/menus/items/{itemId}/disponible(itemId=${i.id})}" method="post">
+                                <input type="hidden" name="menuId" th:value="${menu.id}">
+                                <input type="hidden" name="disponible" th:value="${!i.disponible}">
+                                <button class="btn-secondary !text-xs"
+                                        th:text="${i.disponible ? 'Agotar' : 'Reactivar'}"></button>
+                            </form>
+                            <form th:if="${menu.estado != 'CERRADO'}"
+                                  th:action="@{/admin/menus/{id}/items/{itemId}/eliminar(id=${menu.id}, itemId=${i.id})}"
+                                  method="post">
+                                <button class="btn-ghost !text-xs !text-red-600">Quitar</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

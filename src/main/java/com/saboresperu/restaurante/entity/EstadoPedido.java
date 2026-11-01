@@ -5,8 +5,10 @@ import lombok.*;
 
 @Entity
 @Table(name = "EstadosPedido")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class EstadoPedido {
 
@@ -15,9 +17,9 @@ public class EstadoPedido {
     @Column(name = "IdEstadoPedido")
     private Integer id;
 
-    @Column(name = "Nombre", nullable = false, unique = true, length = 50)
+    @Column(name = "Nombre", nullable = false, length = 30, unique = true)
     private String nombre;
 
-    @Column(name = "Descripcion", length = 250)
+    @Column(name = "Descripcion", length = 200)
     private String descripcion;
 }

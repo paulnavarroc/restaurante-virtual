@@ -43,8 +43,16 @@
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Cocina</a>
             <a sec:authorize="hasRole('REPARTIDOR')" th:href="@{/repartidor/entregas}"
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Entregas</a>
-            <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/admin/dashboard}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Admin</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/dashboard}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Dashboard</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/menus}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Menús del día</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/productos}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Productos</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/promociones}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Promociones</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/cupones}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Cupones</a>
 
             <span sec:authorize="isAuthenticated()" class="hidden text-slate-500 sm:inline"
                   sec:authentication="name"></span>

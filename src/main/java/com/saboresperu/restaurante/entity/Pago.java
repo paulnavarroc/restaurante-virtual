@@ -7,8 +7,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Pagos")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Pago {
 
@@ -17,26 +19,23 @@ public class Pago {
     @Column(name = "IdPago")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdPedido", nullable = false)
     private Pedido pedido;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdMetodoPago", nullable = false)
     private MetodoPago metodoPago;
 
     @Column(name = "Monto", nullable = false, precision = 10, scale = 2)
     private BigDecimal monto;
 
-    @Column(name = "Estado", nullable = false, length = 30)
-    private String estado;          // PENDIENTE, APROBADO, RECHAZADO, DEVUELTO
-
-    @Column(name = "Referencia", length = 150)
-    private String referencia;
-
-    @Column(name = "FechaPago")
-    private LocalDateTime fechaPago;
+    @Column(name = "Estado", nullable = false, length = 20)
+    private String estado;
 
     @Column(name = "FechaRegistro", nullable = false)
     private LocalDateTime fechaRegistro;
+
+    @Column(name = "ReferenciaExterna", length = 100)
+    private String referenciaExterna;
 }

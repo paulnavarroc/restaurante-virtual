@@ -15,6 +15,8 @@ public class DetallePedidoResponseDTO {
     private Integer productoId;
     private String nombreProducto;
     private Integer cantidad;
-    private BigDecimal precioUnitario;
+    private BigDecimal precioLista;
+    private BigDecimal precioUnitarioFinal;
+    private BigDecimal descuentoUnitario;
     private BigDecimal subtotal;
 }

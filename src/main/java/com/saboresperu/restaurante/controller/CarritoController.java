@@ -32,47 +32,47 @@ public class CarritoController {
     private final SecurityUtils securityUtils;
 
     @GetMapping
-    public String verCarrito(HttpSession session, Model model) {
-        model.addAttribute("carrito", carritoService.obtenerCarrito(session));
+    public String ver(HttpSession session, Model model) {
+        model.addAttribute("carrito", carritoService.obtener(session));
         return "cliente/carrito";
     }
 
     @PostMapping("/agregar")
-    public String agregar(@RequestParam Integer productoId,
+    public String agregar(@RequestParam Integer menuDiaItemId,
                           @RequestParam(defaultValue = "1") int cantidad,
                           HttpSession session,
                           RedirectAttributes ra) {
         try {
-            carritoService.agregarProducto(session, productoId, cantidad);
-            ra.addFlashAttribute("mensaje", "Producto agregado al carrito");
-        } catch (Exception e) {
+            carritoService.agregar(session, menuDiaItemId, cantidad);
+            ra.addFlashAttribute("mensaje", "Agregado al carrito");
+        } catch (RuntimeException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/cliente/carrito";
+        return "redirect:/menu";
     }
 
     @PostMapping("/actualizar")
-    public String actualizar(@RequestParam Integer productoId,
+    public String actualizar(@RequestParam Integer menuDiaItemId,
                              @RequestParam int cantidad,
                              HttpSession session) {
-        carritoService.actualizarCantidad(session, productoId, cantidad);
+        carritoService.actualizar(session, menuDiaItemId, cantidad);
         return "redirect:/cliente/carrito";
     }
 
     @PostMapping("/eliminar")
-    public String eliminar(@RequestParam Integer productoId, HttpSession session) {
-        carritoService.eliminarProducto(session, productoId);
+    public String eliminar(@RequestParam Integer menuDiaItemId, HttpSession session) {
+        carritoService.eliminar(session, menuDiaItemId);
         return "redirect:/cliente/carrito";
     }
 
     @GetMapping("/checkout")
     public String checkout(HttpSession session, Model model, RedirectAttributes ra) {
-        CarritoDTO carrito = carritoService.obtenerCarrito(session);
+        CarritoDTO carrito = carritoService.obtener(session);
         if (carrito.isEmpty()) {
             ra.addFlashAttribute("error", "El carrito está vacío");
             return "redirect:/cliente/carrito";
         }
-        Cliente cliente = obtenerClienteActual();
+        Cliente cliente = clienteActual();
         model.addAttribute("carrito", carrito);
         model.addAttribute("direcciones", direccionService.listarPorCliente(cliente.getId()));
         return "cliente/checkout";
@@ -82,42 +82,43 @@ public class CarritoController {
     public String confirmar(@RequestParam Integer direccionId,
                             @RequestParam Integer metodoPagoId,
                             @RequestParam(required = false) String observaciones,
+                            @RequestParam(required = false) String codigoCupon,
                             HttpSession session,
                             RedirectAttributes ra) {
-        CarritoDTO carrito = carritoService.obtenerCarrito(session);
+        CarritoDTO carrito = carritoService.obtener(session);
         if (carrito.isEmpty()) {
             ra.addFlashAttribute("error", "El carrito está vacío");
             return "redirect:/cliente/carrito";
         }
-        try {
-            Cliente cliente = obtenerClienteActual();
 
-            CrearPedidoRequestDTO dto = new CrearPedidoRequestDTO();
-            dto.setDireccionId(direccionId);
-            dto.setMetodoPagoId(metodoPagoId);
-            dto.setObservaciones(observaciones);
-            dto.setItems(carrito.getItems().stream().map(item -> {
-                DetallePedidoRequestDTO d = new DetallePedidoRequestDTO();
-                d.setProductoId(item.getProductoId());
-                d.setCantidad(item.getCantidad());
-                return d;
-            }).collect(Collectors.toList()));
+        try {
+            Cliente cliente = clienteActual();
+
+            CrearPedidoRequestDTO dto = CrearPedidoRequestDTO.builder()
+                    .direccionId(direccionId)
+                    .metodoPagoId(metodoPagoId)
+                    .observaciones(observaciones)
+                    .codigoCupon(codigoCupon)
+                    .items(carrito.getItems().stream().map(i ->
+                            DetallePedidoRequestDTO.builder()
+                                    .productoId(i.getProductoId())
+                                    .menuDiaItemId(i.getMenuDiaItemId())
+                                    .cantidad(i.getCantidad())
+                                    .build()
+                    ).collect(Collectors.toList()))
+                    .build();
 
             PedidoResponseDTO pedido = pedidoService.crearPedido(cliente.getId(), dto);
             carritoService.limpiar(session);
-            ra.addFlashAttribute("mensaje", "¡Pedido realizado!");
+            ra.addFlashAttribute("mensaje", "¡Pedido #" + pedido.getId() + " realizado!");
             return "redirect:/cliente/pedido/" + pedido.getId();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return "redirect:/cliente/carrito/checkout";
         }
     }
 
-    private Cliente obtenerClienteActual() {
-        Integer usuarioId = securityUtils.getUsuarioIdActual();
-        if (usuarioId == null) {
-            throw new RuntimeException("Debes iniciar sesión");
-        }
-        return clienteService.obtenerPorUsuarioId(usuarioId);
+    private Cliente clienteActual() {
+        return clienteService.obtenerPorUsuarioId(securityUtils.getUsuarioIdActual());
     }
 }

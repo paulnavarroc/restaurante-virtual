@@ -5,8 +5,10 @@ import lombok.*;
 
 @Entity
 @Table(name = "Categorias")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Categoria {
 
@@ -15,12 +17,12 @@ public class Categoria {
     @Column(name = "IdCategoria")
     private Integer id;
 
-    @Column(name = "Nombre", nullable = false, unique = true, length = 100)
+    @Column(name = "Nombre", nullable = false, length = 100, unique = true)
     private String nombre;
 
-    @Column(name = "Descripcion", length = 250)
+    @Column(name = "Descripcion", length = 300)
     private String descripcion;
 
     @Column(name = "Activo", nullable = false)
-    private Boolean activo = true;
+    private Boolean activo;
 }

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Promociones</title></head>
+<body>
+<main layout:fragment="content">
+
+    <form th:object="${promo}"
+          th:action="${promo.id != null} ? @{/admin/promociones/{id}(id=${promo.id})} : @{/admin/promociones}"
+          method="post" class="card max-w-xl space-y-4 p-6">
+
+        <input th:field="*{nombre}" class="input" placeholder="Nombre" required>
+        <select th:field="*{tipo}" class="input" required>
+            <option th:each="t : ${tipos}" th:value="${t}" th:text="${t}"></option>
+        </select>
+        <input type="number" step="0.01" th:field="*{valor}" class="input" placeholder="Valor (% o monto)">
+        <div class="grid grid-cols-2 gap-2">
+            <input type="datetime-local" th:field="*{fechaHoraInicio}" class="input" required>
+            <input type="datetime-local" th:field="*{fechaHoraFin}" class="input" required>
+        </div>
+        <select th:field="*{sedeId}" class="input">
+            <option value="">Todas las sedes</option>
+            <option th:each="s : ${sedes}" th:value="${s.id}" th:text="${s.nombre}"></option>
+        </select>
+        <input type="number" th:field="*{cupoGlobal}" class="input" placeholder="Cupo global (opcional)">
+        <input type="number" th:field="*{prioridad}" class="input" placeholder="Prioridad (menor = antes)">
+
+        <label class="flex gap-2 text-sm"><input type="checkbox" th:field="*{combinable}"> Combinable</label>
+        <label class="flex gap-2 text-sm"><input type="checkbox" th:field="*{requiereCodigo}"> Requiere código</label>
+        <label class="flex gap-2 text-sm"><input type="checkbox" th:field="*{activa}"> Activa</label>
+
+        <div>
+            <p class="mb-2 text-sm font-medium">Productos (vacío = todos)</p>
+            <div class="max-h-40 space-y-1 overflow-y-auto text-sm">
+                <label th:each="prod : ${productos}" class="flex gap-2">
+                    <input type="checkbox" name="productoIds" th:value="${prod.id}"
+                           th:checked="${promo.productoIds != null and promo.productoIds.contains(prod.id)}">
+                    <span th:text="${prod.nombre}"></span>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn-primary">Guardar</button>
+    </form>
+
+</main>
+</body>
+</html>

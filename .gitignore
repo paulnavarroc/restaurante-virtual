@@ -5,6 +5,8 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+/uploads/
+
 ### STS ###
 .apt_generated
 .classpath
@@ -15,7 +17,7 @@ target/
 .sts4-cache
 
 ### Files ###
-application.yml
+application-dev.yml
 app.css
 styles.css
 

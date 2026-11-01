@@ -7,8 +7,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "Productos")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Producto {
 
@@ -17,34 +19,34 @@ public class Producto {
     @Column(name = "IdProducto")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "IdRegion", nullable = false)
-    private Region region;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdCategoria", nullable = false)
     private Categoria categoria;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdRegion")
+    private Region region;
 
     @Column(name = "Nombre", nullable = false, length = 150)
     private String nombre;
 
-    @Column(name = "Descripcion", length = 500)
+    @Column(name = "Descripcion", length = 1000)
     private String descripcion;
 
-    @Column(name = "Precio", nullable = false, precision = 10, scale = 2)
-    private BigDecimal precio;
+    @Column(name = "PrecioBase", nullable = false, precision = 10, scale = 2)
+    private BigDecimal precioBase;
 
     @Column(name = "ImagenUrl", length = 500)
     private String imagenUrl;
 
-    @Column(name = "TiempoPreparacion")
-    private Integer tiempoPreparacion;
+    @Column(name = "TiempoPreparacionMin")
+    private Integer tiempoPreparacionMin;
 
-    @Column(name = "Disponible", nullable = false)
-    private Boolean disponible = true;
+    @Column(name = "StockIlimitado", nullable = false)
+    private Boolean stockIlimitado;
 
     @Column(name = "Activo", nullable = false)
-    private Boolean activo = true;
+    private Boolean activo;
 
     @Column(name = "FechaRegistro", nullable = false)
     private LocalDateTime fechaRegistro;

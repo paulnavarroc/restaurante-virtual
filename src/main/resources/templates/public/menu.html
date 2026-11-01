@@ -162,19 +162,16 @@
                         <div class="flex items-center gap-2">
                             <a th:href="@{/menu/producto/{id}(id=${p.id})}" class="btn-secondary !px-3 !py-1.5 !text-xs">Ver</a>
 
-                            <form sec:authorize="isAuthenticated()" th:if="${p.disponible}"
-                                  th:action="@{/cliente/carrito/agregar}" method="post">
-                                <input type="hidden" name="productoId" th:value="${p.id}">
+                            <form th:if="${!item.agotado}"
+                                  sec:authorize="isAuthenticated()"
+                                  th:action="@{/cliente/carrito/agregar}" method="post" class="inline">
+                                <input type="hidden" name="menuDiaItemId" th:value="${item.id}">
                                 <input type="hidden" name="cantidad" value="1">
-                                <button type="submit" class="btn-primary !px-3 !py-1.5 !text-xs">
-                                    <i class="bi bi-plus-lg"></i> Agregar
-                                </button>
+                                <button type="submit" class="btn-primary !text-xs">+ Agregar</button>
                             </form>
-
-                            <a sec:authorize="!isAuthenticated()" th:if="${p.disponible}"
-                               th:href="@{/login}" class="btn-primary !px-3 !py-1.5 !text-xs">
-                                Entrar
-                            </a>
+                            <a th:if="${!item.agotado}" sec:authorize="!isAuthenticated()"
+                               th:href="@{/login}" class="btn-primary !text-xs">Entrar</a>
+                            <span th:if="${item.agotado}" class="text-xs font-semibold text-red-600">Agotado</span>
                         </div>
                     </div>
                 </div>

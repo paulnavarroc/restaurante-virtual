@@ -9,36 +9,32 @@ import java.util.Optional;
 
 public interface ProductoRepository extends JpaRepository<Producto, Integer> {
 
-    List<Producto> findByActivoTrueAndDisponibleTrue();
-
-    List<Producto> findByRegionIdAndActivoTrueAndDisponibleTrue(Integer regionId);
-
-    List<Producto> findByCategoriaIdAndActivoTrueAndDisponibleTrue(Integer categoriaId);
     @Query("""
-           SELECT DISTINCT p FROM Producto p
-           JOIN FETCH p.region
+           SELECT p FROM Producto p
            JOIN FETCH p.categoria
-           WHERE p.activo = true AND p.disponible = true
-             AND (:regionId IS NULL OR p.region.id = :regionId)
-             AND (:categoriaId IS NULL OR p.categoria.id = :categoriaId)
-             AND (
-                  :busqueda IS NULL
-                  OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', CAST(:busqueda AS string), '%'))
-                  OR LOWER(p.descripcion) LIKE LOWER(CONCAT('%', CAST(:busqueda AS string), '%'))
-             )
+           LEFT JOIN FETCH p.region
+           WHERE p.activo = true
            """)
-    List<Producto> buscarProductos(@Param("regionId") Integer regionId,
-                                   @Param("categoriaId") Integer categoriaId,
-                                   @Param("busqueda") String busqueda);
+    List<Producto> findByActivoTrue();
 
     @Query("""
            SELECT p FROM Producto p
-           JOIN FETCH p.region
            JOIN FETCH p.categoria
+           LEFT JOIN FETCH p.region
            WHERE p.id = :id
            """)
     Optional<Producto> findByIdWithDetails(@Param("id") Integer id);
 
-    
+    @Query("""
+           SELECT p FROM Producto p
+           JOIN FETCH p.categoria
+           LEFT JOIN FETCH p.region
+           ORDER BY p.nombre ASC
+           """)
+    List<Producto> findAllWithDetails();
+
+    List<Producto> findByActivoTrueOrderByNombreAsc();
+
+    List<Producto> findAllByOrderByNombreAsc();
 
 }

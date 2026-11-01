@@ -5,9 +5,7 @@ import com.saboresperu.restaurante.dto.ProductoRequestDTO;
 import java.util.List;
 
 public interface ProductoService {
-    List<ProductoDTO> listarDisponibles(Integer regionId, Integer categoriaId, String busqueda);
+    List<ProductoDTO> listarActivos();
     ProductoDTO obtenerPorId(Integer id);
-    ProductoDTO crear(ProductoRequestDTO dto);
-    ProductoDTO actualizar(Integer id, ProductoRequestDTO dto);
-    void cambiarDisponibilidad(Integer id, boolean disponible);
+    List<ProductoDTO> listarDisponibles(Integer regionId, Integer categoriaId, String busqueda);
 }

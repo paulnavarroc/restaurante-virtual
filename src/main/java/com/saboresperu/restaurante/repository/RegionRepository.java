@@ -8,4 +8,5 @@ import java.util.Optional;
 public interface RegionRepository extends JpaRepository<Region, Integer> {
     Optional<Region> findByNombre(String nombre);
     List<Region> findByActivoTrue();
+    List<Region> findByActivoTrueOrderByNombreAsc();
 }

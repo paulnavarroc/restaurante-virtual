@@ -18,13 +18,16 @@ public class PedidoResponseDTO {
     private Integer id;
     private String estado;
     private LocalDateTime fechaPedido;
+    private Integer sedeId;
+    private String sedeNombre;
     private BigDecimal subtotal;
+    private BigDecimal descuentoTotal;
     private BigDecimal costoDelivery;
-    private BigDecimal descuento;
     private BigDecimal total;
-    private String observaciones;
+    private BigDecimal distanciaKm;
     private String direccion;
-
+    private String observaciones;
+    private String codigoCupon;
     @Builder.Default
     private List<DetallePedidoResponseDTO> items = new ArrayList<>();
 }

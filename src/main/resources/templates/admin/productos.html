@@ -5,7 +5,7 @@
 <head><title>Productos</title></head>
 <body>
 <main layout:fragment="content">
-    <section class="mx-auto max-w-6xl px-4 py-10">
+    <section class="mx-auto max-w-6xl px-4 py-8">
         <div class="mb-6 flex items-center justify-between">
             <h1 class="text-2xl font-bold">Productos</h1>
             <a th:href="@{/admin/productos/nuevo}" class="btn-primary !text-sm">
@@ -15,32 +15,50 @@
 
         <div class="card overflow-x-auto">
             <table class="w-full text-left text-sm">
-                <thead class="border-b border-slate-100 bg-slate-50 text-slate-500">
+                <thead class="bg-slate-50 text-slate-500">
                 <tr>
-                    <th class="px-4 py-3">ID</th>
-                    <th class="px-4 py-3">Nombre</th>
+                    <th class="px-4 py-3">Producto</th>
+                    <th class="px-4 py-3">Categoría</th>
                     <th class="px-4 py-3">Región</th>
                     <th class="px-4 py-3">Precio</th>
-                    <th class="px-4 py-3">Disponible</th>
-                    <th class="px-4 py-3">Acciones</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3"></th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="p : ${productos}" class="border-b border-slate-50">
-                    <td class="px-4 py-3" th:text="${p.id}"></td>
-                    <td class="px-4 py-3 font-medium" th:text="${p.nombre}"></td>
-                    <td class="px-4 py-3" th:text="${p.region}"></td>
-                    <td class="px-4 py-3" th:text="'S/ ' + ${p.precio}"></td>
+                <tr th:each="p : ${productos}" class="border-t border-slate-100">
                     <td class="px-4 py-3">
-                        <span th:if="${p.disponible}" class="text-emerald-600">Sí</span>
-                        <span th:unless="${p.disponible}" class="text-red-600">No</span>
+                        <div class="flex items-center gap-3">
+                            <img th:if="${p.imagenUrl != null}" th:src="${p.imagenUrl}"
+                                 class="h-10 w-10 rounded-lg object-cover" alt="">
+                            <div>
+                                <div class="font-medium" th:text="${p.nombre}"></div>
+                                <div th:if="${p.stockIlimitado}" class="text-xs text-slate-400">Stock ilimitado</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3" th:text="${p.categoria}"></td>
+                    <td class="px-4 py-3" th:text="${p.region}"></td>
+                    <td class="px-4 py-3 text-sky-700 font-semibold"
+                        th:text="'S/ ' + ${#numbers.formatDecimal(p.precioBase,1,2)}"></td>
+                    <td class="px-4 py-3">
+                        <span th:if="${p.activo}" class="text-emerald-600">Activo</span>
+                        <span th:if="${!p.activo}" class="text-slate-400">Inactivo</span>
                     </td>
                     <td class="px-4 py-3">
-                        <div class="flex gap-2">
-                            <a th:href="@{/admin/productos/{id}/editar(id=${p.id})}" class="btn-secondary !text-xs">Editar</a>
-                            <form th:action="@{/admin/productos/{id}/disponibilidad(id=${p.id})}" method="post">
-                                <input type="hidden" name="disponible" th:value="${!p.disponible}">
-                                <button class="btn-ghost !text-xs" th:text="${p.disponible} ? 'Desactivar' : 'Activar'"></button>
+                        <div class="flex flex-wrap gap-1 justify-end">
+                            <a th:href="@{/admin/productos/{id}/editar(id=${p.id})}"
+                               class="btn-secondary !text-xs">Editar</a>
+                            <a th:if="${producto.id != null}"
+                               th:href="@{/admin/productos/{id}/receta(id=${producto.id})}"
+                               class="btn-secondary">Editar receta</a>
+                            <form th:if="${p.activo}"
+                                  th:action="@{/admin/productos/{id}/desactivar(id=${p.id})}" method="post">
+                                <button class="btn-ghost !text-xs !text-red-600">Desactivar</button>
+                            </form>
+                            <form th:if="${!p.activo}"
+                                  th:action="@{/admin/productos/{id}/activar(id=${p.id})}" method="post">
+                                <button class="btn-ghost !text-xs !text-emerald-600">Activar</button>
                             </form>
                         </div>
                     </td>

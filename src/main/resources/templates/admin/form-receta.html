@@ -1,0 +1,17 @@
+<form th:action="@{/admin/productos/{id}/receta(id=${receta.productoId})}"
+      th:object="${receta}" method="post" class="card space-y-4 p-6">
+    <p th:text="'Producto: ' + ${receta.productoNombre}"></p>
+    <div th:each="det, stat : *{detalles}" class="grid grid-cols-2 gap-2">
+        <select th:field="*{detalles[__${stat.index}__].insumoId}" class="input" required>
+            <option value="">Insumo</option>
+            <option th:each="i : ${insumos}" th:value="${i.id}"
+                    th:text="${i.nombre} + ' (' + ${i.unidad} + ')'"></option>
+        </select>
+        <input type="number" step="0.0001" th:field="*{detalles[__${stat.index}__].cantidad}"
+               class="input" placeholder="Cant. por plato" required>
+    </div>
+    <p class="text-xs text-slate-400">
+        Para más filas, guarda y vuelve a editar, o duplica una fila en el HTML.
+    </p>
+    <button class="btn-primary">Guardar receta</button>
+</form>

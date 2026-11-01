@@ -1,13 +1,12 @@
 package com.saboresperu.restaurante.service.interfaces;
 
 import com.saboresperu.restaurante.dto.CarritoDTO;
-import com.saboresperu.restaurante.dto.CarritoItemDTO;
 import jakarta.servlet.http.HttpSession;
 
 public interface CarritoService {
-    CarritoDTO obtenerCarrito(HttpSession session);
-    void agregarProducto(HttpSession session, Integer productoId, int cantidad);
-    void actualizarCantidad(HttpSession session, Integer productoId, int cantidad);
-    void eliminarProducto(HttpSession session, Integer productoId);
+    CarritoDTO obtener(HttpSession session);
+    void agregar(HttpSession session, Integer menuDiaItemId, int cantidad);
+    void actualizar(HttpSession session, Integer menuDiaItemId, int cantidad);
+    void eliminar(HttpSession session, Integer menuDiaItemId);
     void limpiar(HttpSession session);
 }

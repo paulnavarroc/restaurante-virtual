@@ -5,9 +5,11 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "HistorialPedido")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Table(name = "HistorialPedidos")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class HistorialPedido {
 
@@ -16,11 +18,11 @@ public class HistorialPedido {
     @Column(name = "IdHistorial")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdPedido", nullable = false)
     private Pedido pedido;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdEstadoPedido", nullable = false)
     private EstadoPedido estadoPedido;
 
@@ -28,7 +30,7 @@ public class HistorialPedido {
     @JoinColumn(name = "IdUsuario")
     private Usuario usuario;
 
-    @Column(name = "Observacion", length = 500)
+    @Column(name = "Observacion", length = 400)
     private String observacion;
 
     @Column(name = "FechaCambio", nullable = false)

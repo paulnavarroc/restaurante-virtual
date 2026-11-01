@@ -7,43 +7,114 @@
 <main layout:fragment="content">
     <section class="mx-auto max-w-lg px-4 py-10">
         <h1 class="mb-6 text-2xl font-bold">Nueva dirección</h1>
-        <form th:action="@{/cliente/direcciones}" th:object="${direccion}" method="post" class="card space-y-4 p-6">
+
+        <form th:action="@{/cliente/direcciones}" th:object="${direccion}" method="post"
+              class="card space-y-4 p-6" id="form-direccion">
+
             <div>
                 <label class="mb-1.5 block text-sm font-medium">Alias</label>
-                <input type="text" th:field="*{alias}" class="input" placeholder="Casa, Oficina...">
+                <input type="text" th:field="*{alias}" class="input" placeholder="Casa, Trabajo...">
             </div>
+
             <div>
-                <label class="mb-1.5 block text-sm font-medium">Dirección completa *</label>
-                <input type="text" th:field="*{direccionCompleta}" required class="input">
+                <label class="mb-1.5 block text-sm font-medium">Departamento *</label>
+                <select th:field="*{idDepartamento}" id="departamento" class="input" required>
+                    <option value="">Selecciona</option>
+                    <option th:each="d : ${departamentos}" th:value="${d.id}" th:text="${d.nombre}"></option>
+                </select>
             </div>
+
             <div>
-                <label class="mb-1.5 block text-sm font-medium">Referencia</label>
-                <input type="text" th:field="*{referencia}" class="input">
+                <label class="mb-1.5 block text-sm font-medium">Provincia *</label>
+                <select th:field="*{idProvincia}" id="provincia" class="input" required>
+                    <option value="">Selecciona departamento primero</option>
+                </select>
             </div>
+
             <div>
                 <label class="mb-1.5 block text-sm font-medium">Distrito *</label>
-                <input type="text" th:field="*{distrito}" required class="input">
+                <select th:field="*{idDistrito}" id="distrito" class="input" required>
+                    <option value="">Selecciona provincia primero</option>
+                </select>
             </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Urbanización</label>
+                <input type="text" th:field="*{urbanizacion}" class="input">
+            </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium">Calle *</label>
+                <input type="text" th:field="*{calle}" class="input" required>
+            </div>
+
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="mb-1.5 block text-sm font-medium">Provincia</label>
-                    <input type="text" th:field="*{provincia}" class="input" value="Lima">
+                    <label class="mb-1.5 block text-sm font-medium">Número</label>
+                    <input type="text" th:field="*{numero}" class="input">
                 </div>
                 <div>
-                    <label class="mb-1.5 block text-sm font-medium">Departamento</label>
-                    <input type="text" th:field="*{departamento}" class="input" value="Lima">
+                    <label class="mb-1.5 block text-sm font-medium">Referencia</label>
+                    <input type="text" th:field="*{referencia}" class="input">
                 </div>
             </div>
+
             <label class="flex items-center gap-2 text-sm">
-                <input type="checkbox" th:field="*{esPrincipal}" class="rounded border-slate-300 text-sky-600">
+                <input type="checkbox" th:field="*{esPrincipal}" class="rounded text-sky-600">
                 Marcar como principal
             </label>
+
             <div class="flex gap-2 pt-2">
                 <button type="submit" class="btn-primary">Guardar</button>
                 <a th:href="@{/cliente/direcciones}" class="btn-secondary">Cancelar</a>
             </div>
         </form>
     </section>
+
+    <script th:inline="javascript">
+        (function () {
+            const dep = document.getElementById('departamento');
+            const prov = document.getElementById('provincia');
+            const dist = document.getElementById('distrito');
+
+            function fillSelect(select, items, placeholder) {
+                select.innerHTML = '';
+                const opt0 = document.createElement('option');
+                opt0.value = '';
+                opt0.textContent = placeholder;
+                select.appendChild(opt0);
+                items.forEach(i => {
+                    const o = document.createElement('option');
+                    o.value = i.id;
+                    o.textContent = i.nombre;
+                    select.appendChild(o);
+                });
+            }
+
+            dep.addEventListener('change', async () => {
+                fillSelect(prov, [], 'Cargando...');
+                fillSelect(dist, [], 'Selecciona provincia primero');
+                if (!dep.value) {
+                    fillSelect(prov, [], 'Selecciona departamento primero');
+                    return;
+                }
+                const res = await fetch('/api/ubigeo/provincias?departamentoId=' + encodeURIComponent(dep.value));
+                const data = await res.json();
+                fillSelect(prov, data, 'Selecciona provincia');
+            });
+
+            prov.addEventListener('change', async () => {
+                fillSelect(dist, [], 'Cargando...');
+                if (!prov.value) {
+                    fillSelect(dist, [], 'Selecciona provincia primero');
+                    return;
+                }
+                const res = await fetch('/api/ubigeo/distritos?provinciaId=' + encodeURIComponent(prov.value));
+                const data = await res.json();
+                fillSelect(dist, data, 'Selecciona distrito');
+            });
+        })();
+    </script>
 </main>
 </body>
 </html>

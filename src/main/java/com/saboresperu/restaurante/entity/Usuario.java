@@ -8,8 +8,10 @@ import java.util.Set;
 
 @Entity
 @Table(name = "Usuarios")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Usuario {
 
@@ -24,23 +26,20 @@ public class Usuario {
     @Column(name = "Apellido", nullable = false, length = 100)
     private String apellido;
 
-    @Column(name = "Correo", nullable = false, unique = true, length = 150)
+    @Column(name = "Correo", nullable = false, length = 150, unique = true)
     private String correo;
 
-    @Column(name = "ContrasenaHash", nullable = false, length = 500)
+    @Column(name = "ContrasenaHash", nullable = false, length = 255)
     private String contrasenaHash;
 
-    @Column(name = "Telefono", length = 20)
+    @Column(name = "Telefono", length = 30)
     private String telefono;
 
     @Column(name = "Activo", nullable = false)
-    private Boolean activo = true;
+    private Boolean activo;
 
     @Column(name = "FechaRegistro", nullable = false)
     private LocalDateTime fechaRegistro;
-
-    @Column(name = "UltimoAcceso")
-    private LocalDateTime ultimoAcceso;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -48,5 +47,6 @@ public class Usuario {
             joinColumns = @JoinColumn(name = "IdUsuario"),
             inverseJoinColumns = @JoinColumn(name = "IdRol")
     )
+    @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 }

@@ -9,8 +9,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "Pedidos")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Pedido {
 
@@ -19,15 +21,19 @@ public class Pedido {
     @Column(name = "IdPedido")
     private Integer id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdCliente", nullable = false)
     private Cliente cliente;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdDireccion", nullable = false)
-    private Direccion direccion;
+    private DireccionCliente direccion;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "IdSede", nullable = false)
+    private Sede sede;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdEstadoPedido", nullable = false)
     private EstadoPedido estadoPedido;
 
@@ -35,20 +41,27 @@ public class Pedido {
     private LocalDateTime fechaPedido;
 
     @Column(name = "Subtotal", nullable = false, precision = 10, scale = 2)
-    private BigDecimal subtotal = BigDecimal.ZERO;
+    private BigDecimal subtotal;
+
+    @Column(name = "DescuentoTotal", nullable = false, precision = 10, scale = 2)
+    private BigDecimal descuentoTotal;
 
     @Column(name = "CostoDelivery", nullable = false, precision = 10, scale = 2)
-    private BigDecimal costoDelivery = BigDecimal.ZERO;
-
-    @Column(name = "Descuento", nullable = false, precision = 10, scale = 2)
-    private BigDecimal descuento = BigDecimal.ZERO;
+    private BigDecimal costoDelivery;
 
     @Column(name = "Total", nullable = false, precision = 10, scale = 2)
-    private BigDecimal total = BigDecimal.ZERO;
+    private BigDecimal total;
+
+    @Column(name = "DistanciaKm", precision = 8, scale = 2)
+    private BigDecimal distanciaKm;
 
     @Column(name = "Observaciones", length = 500)
     private String observaciones;
 
+    @Column(name = "CodigoCupon", length = 40)
+    private String codigoCupon;
+
     @OneToMany(mappedBy = "pedido", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<DetallePedido> detalles = new ArrayList<>();
 }

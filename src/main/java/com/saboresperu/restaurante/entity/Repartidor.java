@@ -2,11 +2,14 @@ package com.saboresperu.restaurante.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "Repartidores")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class Repartidor {
 
@@ -15,22 +18,30 @@ public class Repartidor {
     @Column(name = "IdRepartidor")
     private Integer id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "IdUsuario", nullable = false, unique = true)
     private Usuario usuario;
 
-    @Column(name = "Documento", length = 30)
-    private String documento;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "IdSede", nullable = false)
+    private Sede sede;
 
-    @Column(name = "TipoVehiculo", length = 50)
-    private String tipoVehiculo;
+    @Column(name = "Telefono", length = 30)
+    private String telefono;
 
-    @Column(name = "Placa", length = 20)
-    private String placa;
+    @Column(name = "Vehiculo", length = 50)
+    private String vehiculo;
 
-    @Column(name = "Disponible", nullable = false)
-    private Boolean disponible = true;
+    /** OFFLINE, DISPONIBLE, EN_ENTREGA */
+    @Column(name = "Estado", nullable = false, length = 20)
+    private String estado;
 
     @Column(name = "Activo", nullable = false)
-    private Boolean activo = true;
+    private Boolean activo;
+
+    @Column(name = "UltimaLat", precision = 10, scale = 7)
+    private BigDecimal ultimaLat;
+
+    @Column(name = "UltimaLng", precision = 10, scale = 7)
+    private BigDecimal ultimaLng;
 }

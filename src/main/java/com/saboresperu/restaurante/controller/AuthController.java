@@ -29,29 +29,6 @@ public class AuthController {
         return "auth/login";
     }
 
-    /*
-
-    @GetMapping("/login")
-    public String login(@RequestParam(value = "error", required = false) String error,
-                        @RequestParam(value = "logout", required = false) String logout,
-                        @RequestParam(value = "denied", required = false) String denied,
-                        Model model) {
-
-        if (error != null) {
-            model.addAttribute("error", "Correo o contraseña incorrectos");
-        }
-        if (logout != null) {
-            model.addAttribute("mensaje", "Sesión cerrada");
-        }
-        if (denied != null) {
-            model.addAttribute("error", "No tienes permiso para esa sección");
-        }
-        return "auth/login";  // templates/auth/login.html
-    }
-
-     */
-
-
     @GetMapping("/registro")
     public String mostrarRegistro(Model model) {
         model.addAttribute("usuario", new RegistroRequestDTO());
@@ -77,12 +54,4 @@ public class AuthController {
             return "auth/registro";
         }
     }
-/*
-    @GetMapping("/home")
-    public String home() {
-        // Redirige según el rol (se puede mejorar después)
-        return "redirect:/cliente/catalogo";
-    }
-    
- */
 }

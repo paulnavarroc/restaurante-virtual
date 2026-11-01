@@ -5,8 +5,10 @@ import lombok.*;
 
 @Entity
 @Table(name = "MetodosPago")
-@Getter @Setter
-@NoArgsConstructor @AllArgsConstructor
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 public class MetodoPago {
 
@@ -15,9 +17,9 @@ public class MetodoPago {
     @Column(name = "IdMetodoPago")
     private Integer id;
 
-    @Column(name = "Nombre", nullable = false, unique = true, length = 50)
+    @Column(name = "Nombre", nullable = false, length = 50, unique = true)
     private String nombre;
 
     @Column(name = "Activo", nullable = false)
-    private Boolean activo = true;
+    private Boolean activo;
 }

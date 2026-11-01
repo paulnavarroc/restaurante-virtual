@@ -21,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final RoleBasedAuthSuccessHandler successHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -45,32 +46,30 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // CRÍTICO en Spring Security 6: no proteger FORWARD/ERROR
                         .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/",
-                                "/home",
                                 "/menu",
                                 "/menu/**",
-                                "/catalogo",
-                                "/catalogo/**",
-                                "/login",
-                                "/registro",
-                                "/perform_login",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                "/error",
-                                "/error/**",
-                                "/favicon.ico"
-                        ).permitAll()
-
+                                "/login",
+                                "/registro",
+                                "/perform_login").permitAll()
+                        .requestMatchers("/media/**").permitAll()
+                        .requestMatchers("/api/ubigeo/**").authenticated()
+                        .requestMatchers("/api/dev/**").hasRole("CLIENTE")
+                        .requestMatchers("/cliente/**").hasRole("CLIENTE")
+                        //.requestMatchers("/api/ubigeo/**").hasRole("CLIENTE")
+                        .requestMatchers("/cliente/direcciones/**").hasRole("CLIENTE")
                         .requestMatchers("/cliente/carrito/**", "/cliente/pedidos/**",
-                                "/cliente/pedido/**", "/cliente/direcciones/**",
-                                "/cliente/perfil/**").hasRole("CLIENTE")
+                                "/cliente/pedido/**", "/cliente/direcciones/**")
+                        .hasRole("CLIENTE")
                         .requestMatchers("/cocina/**").hasRole("CHEF")
                         .requestMatchers("/repartidor/**").hasRole("REPARTIDOR")
-                        .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                        //.requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/admin/**").hasAnyRole("ADMINISTRADOR", "OPERACIONES")
 
                         .anyRequest().authenticated()
                 )
@@ -79,7 +78,7 @@ public class SecurityConfig {
                         .loginProcessingUrl("/perform_login")
                         .usernameParameter("correo")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/home", true)
+                        .successHandler(successHandler)
                         .failureUrl("/login?error=true")
                         .permitAll()
                 )
