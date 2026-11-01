@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
@@ -23,6 +24,7 @@ public class ReporteServiceImpl implements ReporteService {
     private final PedidoRepository pedidoRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public List<ReporteVentaDTO> obtenerVentas() {
         return pedidoRepository.findAll().stream()
                 .map(p -> ReporteVentaDTO.builder()
@@ -40,6 +42,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<ProductoMasVendidoDTO> obtenerProductosMasVendidos() {
         Map<Integer, ProductoMasVendidoDTO> mapa = new HashMap<>();
 
@@ -74,6 +77,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] generarExcelVentas() {
         List<ReporteVentaDTO> ventas = obtenerVentas();
 
@@ -124,6 +128,7 @@ public class ReporteServiceImpl implements ReporteService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public byte[] generarExcelProductosMasVendidos() {
         List<ProductoMasVendidoDTO> productos = obtenerProductosMasVendidos();
 
