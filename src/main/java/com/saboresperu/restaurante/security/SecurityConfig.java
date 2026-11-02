@@ -22,6 +22,8 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final RoleBasedAuthSuccessHandler successHandler;
+    private final LoginFailureHandler failureHandler;
+    private final LogoutAuditHandler logoutAuditHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -69,6 +71,8 @@ public class SecurityConfig {
                         .requestMatchers("/cocina/**").hasRole("CHEF")
                         .requestMatchers("/repartidor/**").hasRole("REPARTIDOR")
                         //.requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                        .requestMatchers("/admin/usuarios/**", "/admin/clientes/**", "/admin/auditoria/**")
+                        .hasRole("ADMINISTRADOR")
                         .requestMatchers("/admin/**").hasAnyRole("ADMINISTRADOR", "OPERACIONES")
 
                         .anyRequest().authenticated()
@@ -76,17 +80,17 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/perform_login")
-                        .usernameParameter("correo")
+                        .usernameParameter("username")
                         .passwordParameter("password")
                         .successHandler(successHandler)
-                        .failureUrl("/login?error=true")
+                        .failureHandler(failureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessUrl("/login?logout=true")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler(logoutAuditHandler)
+                        //.invalidateHttpSession(true)
+                        //.deleteCookies("JSESSIONID")
                         .permitAll()
                 );
 

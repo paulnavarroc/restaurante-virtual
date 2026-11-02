@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Usuario</title></head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-lg px-4 py-8">
+        <h1 class="mb-6 text-2xl font-bold"
+            th:text="${form.id != null} ? 'Editar usuario' : 'Nuevo usuario'">Usuario</h1>
+
+        <div th:if="${error}" class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800"
+             th:text="${error}"></div>
+
+        <form th:object="${form}" method="post"
+              th:action="${form.id != null} ? @{/admin/usuarios/{id}(id=${form.id})} : @{/admin/usuarios}"
+              class="card space-y-4 p-6">
+
+            <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label class="mb-1 block text-sm font-medium">Nombre *</label>
+                    <input th:field="*{nombre}" class="input" required>
+                </div>
+                <div>
+                    <label class="mb-1 block text-sm font-medium">Apellido *</label>
+                    <input th:field="*{apellido}" class="input" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium">Correo *</label>
+                <input type="email" th:field="*{correo}" class="input" required th:readonly="${form.id != null}">
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium">Teléfono</label>
+                <input th:field="*{telefono}" class="input">
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium"
+                       th:text="${form.id != null} ? 'Nueva contraseña (opcional)' : 'Contraseña *'">Password</label>
+                <input type="password" th:field="*{password}" class="input"
+                       th:required="${form.id == null}" minlength="6">
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-medium">Rol *</label>
+                <select th:field="*{rol}" class="input" id="rolSelect" required>
+                    <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+                    <option value="OPERACIONES">OPERACIONES</option>
+                    <option value="CHEF">CHEF</option>
+                    <option value="REPARTIDOR">REPARTIDOR</option>
+                    <option value="CLIENTE">CLIENTE</option>
+                </select>
+            </div>
+
+            <div id="bloqueSede">
+                <label class="mb-1 block text-sm font-medium">Sede *</label>
+                <select th:field="*{sedeId}" class="input">
+                    <option value="">Seleccione</option>
+                    <option th:each="s : ${sedes}" th:value="${s.id}" th:text="${s.nombre}"></option>
+                </select>
+                <div class="mt-2">
+                    <label class="mb-1 block text-sm font-medium">Cargo (cocina)</label>
+                    <input th:field="*{cargo}" class="input" placeholder="Chef / Ayudante">
+                </div>
+                <div class="mt-2">
+                    <label class="mb-1 block text-sm font-medium">Vehículo (repartidor)</label>
+                    <input th:field="*{vehiculo}" class="input" placeholder="Moto">
+                </div>
+            </div>
+
+            <label class="flex items-center gap-2 text-sm">
+                <input type="checkbox" th:field="*{activo}"> Activo
+            </label>
+
+            <button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i> Guardar</button>
+        </form>
+    </section>
+    <script>
+        function toggleSede() {
+            const rol = document.getElementById('rolSelect').value;
+            document.getElementById('bloqueSede').style.display =
+                (rol === 'CHEF' || rol === 'REPARTIDOR') ? 'block' : 'none';
+        }
+        document.getElementById('rolSelect').addEventListener('change', toggleSede);
+        toggleSede();
+    </script>
+</main>
+</body>
+</html>

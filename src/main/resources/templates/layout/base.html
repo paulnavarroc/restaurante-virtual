@@ -70,7 +70,19 @@
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Promos</a>
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/cupones}"
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Cupones</a>
-
+            <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/admin/usuarios}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-people"></i> Usuarios
+            </a>
+            <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/admin/clientes}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-person-lines-fill"></i> Clientes
+            </a>
+            <a sec:authorize="hasRole('ADMINISTRADOR')" th:href="@{/admin/auditoria}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-shield-lock"></i> Auditoría
+            </a>
+            
             <span sec:authorize="isAuthenticated()" class="hidden text-slate-500 sm:inline"
                   sec:authentication="name"></span>
 

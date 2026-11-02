@@ -1,6 +1,9 @@
 package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.CambiarEstadoPedidoDTO;
+import com.saboresperu.restaurante.entity.PersonalCocina;
+import com.saboresperu.restaurante.exception.BusinessException;
+import com.saboresperu.restaurante.repository.PersonalCocinaRepository;
 import com.saboresperu.restaurante.service.interfaces.PedidoService;
 import com.saboresperu.restaurante.service.interfaces.SedeService;
 import com.saboresperu.restaurante.util.SecurityUtils;
@@ -20,9 +23,16 @@ public class CocinaController {
     private final PedidoService pedidoService;
     private final SedeService sedeService;
     private final SecurityUtils securityUtils;
+    private final PersonalCocinaRepository personalCocinaRepository;
 
     @GetMapping("/pedidos")
-    public String pedidos(@RequestParam(required = false) Integer sedeId, Model model) {
+    public String pedidos( Model model) {
+
+        Integer usuarioId = securityUtils.getUsuarioIdActual();
+        PersonalCocina personal = personalCocinaRepository.findActivoByUsuarioId(usuarioId)
+                .orElseThrow(() -> new BusinessException("No tienes sede de cocina asignada"));
+        Integer sedeId = personal.getSede().getId();
+
         if (sedeId == null) {
             sedeId = sedeService.listarActivas().stream().findFirst().map(s -> s.getId()).orElse(null);
         }

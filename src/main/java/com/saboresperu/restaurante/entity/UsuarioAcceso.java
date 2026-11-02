@@ -9,18 +9,22 @@ import java.time.LocalDateTime;
 @Table(name = "UsuarioAccesos")
 @Getter
 @Setter
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class UsuarioAcceso {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdAcceso")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "IdUsuario", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdUsuario")
     private Usuario usuario;
+
+    @Column(name = "CorreoIntentado", length = 150)
+    private String correoIntentado;
 
     @Column(name = "Evento", nullable = false, length = 30)
     private String evento;

@@ -34,6 +34,7 @@ public class DevUserSeed implements CommandLineRunner {
     private final UbigeoDistritoRepository ubigeoDistritoRepository;
     private final SedeRepository sedeRepository;
     private final RepartidorRepository repartidorRepository;
+    private final PersonalCocinaRepository personalCocinaRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -51,9 +52,22 @@ public class DevUserSeed implements CommandLineRunner {
                 "ops@saboresperu.com", "Lucia", "Operaciones",
                 "999000002", "OPERACIONES");
 
-        ensureUsuario(
+        Usuario chef = ensureUsuario(
                 "cocina@saboresperu.com", "Marco", "Chef",
                 "999000003", "CHEF");
+
+        if (personalCocinaRepository.findByUsuarioId(chef.getId()).isEmpty()) {
+            List<Sede> sedes = sedeRepository.findByActivaTrue();
+            if (!sedes.isEmpty()) {
+                personalCocinaRepository.save(PersonalCocina.builder()
+                        .usuario(chef)
+                        .sede(sedes.get(0))
+                        .cargo("Chef")
+                        .activo(true)
+                        .fechaAsignacion(LocalDateTime.now())
+                        .build());
+            }
+        }
 
         Usuario repartidorUser = ensureUsuario(
                 "repartidor@saboresperu.com", "Pedro", "Repartidor",

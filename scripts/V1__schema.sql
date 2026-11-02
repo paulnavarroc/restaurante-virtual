@@ -51,18 +51,19 @@ CREATE TABLE dbo.Usuarios (
 GO
 
 CREATE TABLE dbo.UsuarioAccesos (
-    IdAcceso        BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UsuarioAccesos PRIMARY KEY,
-    IdUsuario       INT NOT NULL,
-    Evento          NVARCHAR(30) NOT NULL,  -- LOGIN_OK, LOGIN_FAIL, LOGOUT, SESSION_ACTIVITY
-    Exitoso         BIT NOT NULL CONSTRAINT DF_Acceso_Ok DEFAULT (1),
-    Ip              NVARCHAR(45) NULL,
-    UserAgent       NVARCHAR(500) NULL,
-    Navegador       NVARCHAR(80) NULL,
-    SistemaOperativo NVARCHAR(80) NULL,
-    Dispositivo     NVARCHAR(40) NULL, -- Desktop, Mobile, Tablet
-    SessionId       NVARCHAR(100) NULL,
-    Detalle         NVARCHAR(300) NULL,
-    Fecha           DATETIME2(0) NOT NULL CONSTRAINT DF_Acceso_Fecha DEFAULT (SYSUTCDATETIME()),
+    IdAcceso           BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UsuarioAccesos PRIMARY KEY,
+    IdUsuario          INT NULL,
+    CorreoIntentado    NVARCHAR(150) NULL,
+    Evento             NVARCHAR(30) NOT NULL,
+    Exitoso            BIT NOT NULL CONSTRAINT DF_Acceso_Ok DEFAULT (1),
+    Ip                 NVARCHAR(45) NULL,
+    UserAgent          NVARCHAR(500) NULL,
+    Navegador          NVARCHAR(80) NULL,
+    SistemaOperativo   NVARCHAR(80) NULL,
+    Dispositivo        NVARCHAR(40) NULL,
+    SessionId          NVARCHAR(100) NULL,
+    Detalle            NVARCHAR(300) NULL,
+    Fecha              DATETIME2(0) NOT NULL CONSTRAINT DF_Acceso_Fecha DEFAULT (SYSUTCDATETIME()),
     CONSTRAINT FK_Acceso_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
 );
 GO
@@ -70,7 +71,6 @@ GO
 CREATE INDEX IX_Accesos_Usuario_Fecha ON dbo.UsuarioAccesos(IdUsuario, Fecha DESC);
 CREATE INDEX IX_Accesos_Fecha ON dbo.UsuarioAccesos(Fecha DESC);
 GO
-
 
 CREATE TABLE dbo.UsuarioRoles (
     IdUsuario INT NOT NULL,

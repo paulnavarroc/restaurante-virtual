@@ -41,6 +41,15 @@ public class Usuario {
     @Column(name = "FechaRegistro", nullable = false)
     private LocalDateTime fechaRegistro;
 
+    @Column(name = "UltimoAcceso")
+    private LocalDateTime ultimoAcceso;
+
+    @Column(name = "UltimaIp", length = 45)
+    private String ultimaIp;
+
+    @Column(name = "UltimoUserAgent", length = 500)
+    private String ultimoUserAgent;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "UsuarioRoles",
