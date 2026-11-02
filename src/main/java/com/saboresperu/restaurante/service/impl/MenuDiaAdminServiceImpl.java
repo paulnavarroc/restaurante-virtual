@@ -11,7 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -72,7 +74,7 @@ public class MenuDiaAdminServiceImpl implements MenuDiaAdminService {
 
     @Override
     @Transactional
-    public MenuDiaAdminDTO agregarItem(Integer menuDiaId, CrearMenuDiaRequestDTO request) {
+    public MenuDiaAdminDTO agregarItem(Integer menuDiaId, AgregarMenuItemRequestDTO request) {
         MenuDia menu = menuDiaRepository.findByIdWithDetails(menuDiaId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menú no encontrado"));
 
@@ -83,7 +85,11 @@ public class MenuDiaAdminServiceImpl implements MenuDiaAdminService {
         Producto producto = productoRepository.findById(request.getProductoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
-        boolean exists = menu.getItems().stream()
+        if (!Boolean.TRUE.equals(producto.getActivo())) {
+            throw new BusinessException("El producto no está activo");
+        }
+
+        boolean exists = menu.getItems() != null && menu.getItems().stream()
                 .anyMatch(i -> i.getProducto().getId().equals(producto.getId()));
         if (exists) {
             throw new BusinessException("El producto ya está en el menú");
@@ -91,16 +97,23 @@ public class MenuDiaAdminServiceImpl implements MenuDiaAdminService {
 
         Set<SedeTurno> turnos = resolverTurnos(menu.getSede().getId(), request.getSedeTurnoIds());
 
+        BigDecimal precio = request.getPrecioDia() != null
+                ? request.getPrecioDia()
+                : producto.getPrecioBase();
+
         MenuDiaItem item = MenuDiaItem.builder()
                 .menuDia(menu)
                 .producto(producto)
                 .disponible(true)
-                .precioDia(request.getPrecioDia())
+                .precioDia(precio)
                 .cupoMaximo(request.getCupoMaximo())
                 .cantidadVendida(0)
                 .turnos(turnos)
                 .build();
 
+        if (menu.getItems() == null) {
+            menu.setItems(new ArrayList<>());
+        }
         menu.getItems().add(item);
         menuDiaRepository.save(menu);
         return obtener(menuDiaId);

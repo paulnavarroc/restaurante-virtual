@@ -20,7 +20,7 @@ import java.util.List;
 public class ReporteController {
 
     private final ReporteService reporteService;
-
+/*
     @GetMapping
     public String index(Model model) {
         List<ReporteVentaDTO> ventas = reporteService.obtenerVentas();
@@ -51,4 +51,5 @@ public class ReporteController {
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excel);
     }
+ */
 }

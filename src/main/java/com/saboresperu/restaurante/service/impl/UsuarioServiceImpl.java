@@ -3,7 +3,12 @@ package com.saboresperu.restaurante.service.impl;
 import com.saboresperu.restaurante.dto.RegistroRequestDTO;
 import com.saboresperu.restaurante.entity.*;
 import com.saboresperu.restaurante.exception.BusinessException;
-import com.saboresperu.restaurante.repository.*;
+import com.saboresperu.restaurante.exception.ResourceNotFoundException;
+import com.saboresperu.restaurante.repository.ClienteRepository;
+import com.saboresperu.restaurante.repository.DireccionClienteRepository;
+import com.saboresperu.restaurante.repository.RolRepository;
+import com.saboresperu.restaurante.repository.UbigeoDistritoRepository;
+import com.saboresperu.restaurante.repository.UsuarioRepository;
 import com.saboresperu.restaurante.service.interfaces.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,7 +25,8 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final ClienteRepository clienteRepository;
-    private final DireccionRepository direccionRepository;
+    private final DireccionClienteRepository direccionClienteRepository;
+    private final UbigeoDistritoRepository ubigeoDistritoRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -29,19 +35,19 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioRepository.existsByCorreo(dto.getCorreo())) {
             throw new BusinessException("El correo ya está registrado");
         }
-        if (!dto.getPassword().equals(dto.getConfirmPassword())) {
-            throw new RuntimeException("Las contraseñas no coinciden");
+        if (dto.getPassword() == null || !dto.getPassword().equals(dto.getConfirmPassword())) {
+            throw new BusinessException("Las contraseñas no coinciden");
         }
 
         Rol rolCliente = rolRepository.findByNombre("CLIENTE")
-                .orElseThrow(() -> new RuntimeException("Rol CLIENTE no encontrado"));
+                .orElseThrow(() -> new BusinessException("Rol CLIENTE no encontrado en el sistema"));
 
         Usuario usuario = Usuario.builder()
-                .nombre(dto.getNombre())
-                .apellido(dto.getApellido())
-                .correo(dto.getCorreo())
+                .nombre(dto.getNombre().trim())
+                .apellido(dto.getApellido().trim())
+                .correo(dto.getCorreo().trim().toLowerCase())
                 .contrasenaHash(passwordEncoder.encode(dto.getPassword()))
-                .telefono(dto.getTelefono())
+                .telefono(blankToNull(dto.getTelefono()))
                 .activo(true)
                 .fechaRegistro(LocalDateTime.now())
                 .roles(Set.of(rolCliente))
@@ -51,38 +57,65 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         Cliente cliente = Cliente.builder()
                 .usuario(usuario)
-                .documentoTipo(dto.getDocumentoTipo())
-                .documentoNumero(dto.getDocumentoNumero())
+                .documentoTipo(blankToNull(dto.getDocumentoTipo()))
+                .documentoNumero(blankToNull(dto.getDocumentoNumero()))
                 .fechaRegistro(LocalDateTime.now())
                 .build();
         cliente = clienteRepository.save(cliente);
 
-        // Dirección inicial (opcional)
-        if (dto.getDireccionCompleta() != null && !dto.getDireccionCompleta().isBlank()) {
-            Direccion direccion = Direccion.builder()
-                    .cliente(cliente)
-                    .direccionCompleta(dto.getDireccionCompleta())
-                    .distrito(dto.getDistrito() != null ? dto.getDistrito() : "Lima")
-                    .provincia(dto.getProvincia() != null ? dto.getProvincia() : "Lima")
-                    .departamento(dto.getDepartamento() != null ? dto.getDepartamento() : "Lima")
-                    .esPrincipal(true)
-                    .activo(true)
-                    .build();
-            direccionRepository.save(direccion);
-        }
+        // Dirección opcional v2 (solo si hay distrito Ubigeo + calle)
+        crearDireccionInicialSiCorresponde(cliente, dto);
 
         return usuario;
     }
 
-    @Override
-    public Usuario buscarPorCorreo(String correo) {
-        return usuarioRepository.findByCorreo(correo)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    private void crearDireccionInicialSiCorresponde(Cliente cliente, RegistroRequestDTO dto) {
+        String idDistrito = blankToNull(dto.getIdDistrito());
+        String calle = blankToNull(dto.getCalle());
+
+        // Compatibilidad: si el form viejo mandó solo texto, no intentamos mapear a Ubigeo
+        if (idDistrito == null || calle == null) {
+            return;
+        }
+
+        UbigeoDistrito distrito = ubigeoDistritoRepository.findById(idDistrito)
+                .orElseThrow(() -> new ResourceNotFoundException("Distrito no válido"));
+
+        DireccionCliente direccion = DireccionCliente.builder()
+                .cliente(cliente)
+                .distrito(distrito)
+                .alias(blankToNull(dto.getAlias()) != null ? dto.getAlias().trim() : "Principal")
+                .calle(calle.trim())
+                .numero(blankToNull(dto.getNumero()))
+                .referencia(blankToNull(dto.getReferencia()))
+                .urbanizacion(blankToNull(dto.getUrbanizacion()))
+                .lat(distrito.getLatCentro())
+                .lng(distrito.getLngCentro())
+                .esPrincipal(true)
+                .activa(true)
+                .fechaCreacion(LocalDateTime.now())
+                .build();
+
+        direccionClienteRepository.save(direccion);
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null) return null;
+        String t = value.trim();
+        return t.isEmpty() ? null : t;
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Usuario buscarPorCorreo(String correo) {
+        return usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public Usuario buscarPorId(Integer id) {
         return usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
     }
 }

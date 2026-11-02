@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head>
+    <title>Insumos</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-6xl px-4 py-8">
+        <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">
+                    <i class="bi bi-box-seam text-sky-600"></i> Insumos
+                </h1>
+                <p class="text-sm text-slate-500">Maestro de ingredientes y materiales</p>
+            </div>
+            <a th:href="@{/admin/insumos/nuevo}" class="btn-primary !text-sm">
+                <i class="bi bi-plus-lg"></i> Nuevo insumo
+            </a>
+        </div>
+
+        <div th:if="${insumos == null or #lists.isEmpty(insumos)}"
+             class="card px-6 py-16 text-center text-slate-500">
+            <i class="bi bi-inbox text-4xl text-slate-300"></i>
+            <p class="mt-3">Aún no hay insumos registrados.</p>
+            <a th:href="@{/admin/insumos/nuevo}" class="btn-primary mt-4 inline-flex !text-sm">Crear el primero</a>
+        </div>
+
+        <div th:if="${insumos != null and !#lists.isEmpty(insumos)}" class="card overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                    <th class="px-4 py-3 font-medium">Nombre</th>
+                    <th class="px-4 py-3 font-medium">Unidad</th>
+                    <th class="px-4 py-3 font-medium">Mín. alerta</th>
+                    <th class="px-4 py-3 font-medium">Tipo</th>
+                    <th class="px-4 py-3 font-medium">Estado</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="i : ${insumos}" class="border-t border-slate-100 hover:bg-sky-50/40">
+                    <td class="px-4 py-3 font-medium text-slate-900" th:text="${i.nombre}">Harina</td>
+                    <td class="px-4 py-3" th:text="${i.unidad}">kg</td>
+                    <td class="px-4 py-3 text-slate-600"
+                        th:text="${i.stockMinimoAlerta != null ? i.stockMinimoAlerta : '—'}">—</td>
+                    <td class="px-4 py-3">
+                        <span th:if="${i.stockIlimitado}" class="badge">
+                            <i class="bi bi-infinity"></i> Ilimitado
+                        </span>
+                        <span th:if="${!i.stockIlimitado}" class="text-slate-500">Controlado</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <span th:if="${i.activo}" class="inline-flex items-center gap-1 text-emerald-600">
+                            <i class="bi bi-check-circle-fill"></i> Activo
+                        </span>
+                        <span th:if="${!i.activo}" class="inline-flex items-center gap-1 text-slate-400">
+                            <i class="bi bi-pause-circle"></i> Inactivo
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a th:href="@{/admin/insumos/{id}/editar(id=${i.id})}"
+                           class="btn-secondary !text-xs">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

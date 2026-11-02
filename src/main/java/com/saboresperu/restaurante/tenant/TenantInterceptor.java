@@ -3,10 +3,12 @@ package com.saboresperu.restaurante.tenant;
 import com.saboresperu.restaurante.config.TenantProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 @Component
+@Profile("multi-tenant")
 public class TenantInterceptor implements HandlerInterceptor {
 
     private final TenantProperties tenantProperties;
@@ -17,34 +19,32 @@ public class TenantInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        String tenantId = resolveTenant(request);
-        TenantContext.setTenantId(tenantId);
+        TenantContext.setTenantId(resolveTenant(request));
         return true;
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response,
                                 Object handler, Exception ex) {
-        TenantContext.clear(); // Muy importante
+        TenantContext.clear();
     }
 
     private String resolveTenant(HttpServletRequest request) {
-        // 1. Por Header (recomendado para APIs)
         String tenantHeader = request.getHeader("X-Tenant-ID");
-        if (tenantHeader != null && tenantProperties.getConfigs().containsKey(tenantHeader)) {
+        if (tenantHeader != null
+                && tenantProperties.getConfigs() != null
+                && tenantProperties.getConfigs().containsKey(tenantHeader)) {
             return tenantHeader;
         }
 
-        // 2. Por subdominio (lima.saboresperu.com)
         String host = request.getServerName();
-        if (host != null && host.contains(".")) {
+        if (host != null && host.contains(".")
+                && tenantProperties.getConfigs() != null) {
             String subdomain = host.split("\\.")[0];
             if (tenantProperties.getConfigs().containsKey(subdomain)) {
                 return subdomain;
             }
         }
-
-        // 3. Tenant por defecto
         return tenantProperties.getDefaultTenant();
     }
 }

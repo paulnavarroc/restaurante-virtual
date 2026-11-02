@@ -13,7 +13,6 @@
 </head>
 <body class="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 antialiased">
 
-<!-- Navbar -->
 <header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur">
     <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <a th:href="@{/menu}" class="flex items-center gap-2 text-lg font-bold text-sky-700">
@@ -21,8 +20,11 @@
             Sabores Perú
         </a>
 
-        <nav class="flex flex-wrap items-center gap-2 text-sm text-slate-600 sm:gap-3">
-            <a th:href="@{/menu}" class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Menú</a>
+        <nav class="flex flex-wrap items-center gap-1 text-sm text-slate-600 sm:gap-2">
+            <a th:href="@{/menu}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-journal-richtext"></i> Menú
+            </a>
 
             <a sec:authorize="hasRole('CLIENTE')" th:href="@{/cliente/pedidos}"
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Mis pedidos</a>
@@ -40,17 +42,32 @@
             </a>
 
             <a sec:authorize="hasRole('CHEF')" th:href="@{/cocina/pedidos}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Cocina</a>
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-egg-fried"></i> Cocina
+            </a>
             <a sec:authorize="hasRole('REPARTIDOR')" th:href="@{/repartidor/entregas}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Entregas</a>
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-bicycle"></i> Entregas
+            </a>
+
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/dashboard}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Dashboard</a>
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/menus}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Menús del día</a>
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Menús</a>
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/productos}"
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Productos</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/insumos}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-box-seam"></i> Insumos
+            </a>
+            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/stock}"
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-clipboard-data"></i> Stock
+            </a>
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/promociones}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Promociones</a>
+               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Promos</a>
             <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/cupones}"
                class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Cupones</a>
 
@@ -58,7 +75,9 @@
                   sec:authentication="name"></span>
 
             <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
-                <button type="submit" class="btn-secondary !py-1.5 !text-xs">Salir</button>
+                <button type="submit" class="btn-secondary !py-1.5 !text-xs">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </button>
             </form>
 
             <a sec:authorize="!isAuthenticated()" th:href="@{/login}" class="btn-secondary !py-1.5 !text-xs">Entrar</a>
@@ -67,20 +86,20 @@
     </div>
 </header>
 
-<!-- Flash messages -->
 <div class="mx-auto max-w-6xl px-4 pt-4">
     <div th:if="${mensaje}"
-         class="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
-         th:text="${mensaje}"></div>
+         class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+        <i class="bi bi-check-circle-fill"></i>
+        <span th:text="${mensaje}"></span>
+    </div>
     <div th:if="${error}"
-         class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800"
-         th:text="${error}"></div>
+         class="mb-4 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span th:text="${error}"></span>
+    </div>
 </div>
 
-<!-- Contenido de cada vista -->
-<main class="flex-1" layout:fragment="content">
-    <!-- las páginas hijas insertan aquí -->
-</main>
+<main class="flex-1" layout:fragment="content"></main>
 
 <footer class="mt-12 border-t border-slate-200 bg-white">
     <div class="mx-auto flex max-w-6xl flex-col justify-between gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row">

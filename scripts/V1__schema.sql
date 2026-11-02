@@ -15,12 +15,6 @@ USE SaboresPeru;
 GO
 
 
-
-/* =========================================================
-   Sabores Perú – Schema v2
-   SQL Server
-   ========================================================= */
-
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
@@ -49,9 +43,34 @@ CREATE TABLE dbo.Usuarios (
     Telefono        NVARCHAR(30)  NULL,
     Activo          BIT NOT NULL CONSTRAINT DF_Usuarios_Activo DEFAULT (1),
     FechaRegistro   DATETIME2(0) NOT NULL CONSTRAINT DF_Usuarios_Fecha DEFAULT (SYSUTCDATETIME()),
+	UltimoAcceso     DATETIME2(0) NULL,
+    UltimaIp         NVARCHAR(45) NULL,
+    UltimoUserAgent  NVARCHAR(500) NULL,
     CONSTRAINT UQ_Usuarios_Correo UNIQUE (Correo)
 );
 GO
+
+CREATE TABLE dbo.UsuarioAccesos (
+    IdAcceso        BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UsuarioAccesos PRIMARY KEY,
+    IdUsuario       INT NOT NULL,
+    Evento          NVARCHAR(30) NOT NULL,  -- LOGIN_OK, LOGIN_FAIL, LOGOUT, SESSION_ACTIVITY
+    Exitoso         BIT NOT NULL CONSTRAINT DF_Acceso_Ok DEFAULT (1),
+    Ip              NVARCHAR(45) NULL,
+    UserAgent       NVARCHAR(500) NULL,
+    Navegador       NVARCHAR(80) NULL,
+    SistemaOperativo NVARCHAR(80) NULL,
+    Dispositivo     NVARCHAR(40) NULL, -- Desktop, Mobile, Tablet
+    SessionId       NVARCHAR(100) NULL,
+    Detalle         NVARCHAR(300) NULL,
+    Fecha           DATETIME2(0) NOT NULL CONSTRAINT DF_Acceso_Fecha DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_Acceso_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
+);
+GO
+
+CREATE INDEX IX_Accesos_Usuario_Fecha ON dbo.UsuarioAccesos(IdUsuario, Fecha DESC);
+CREATE INDEX IX_Accesos_Fecha ON dbo.UsuarioAccesos(Fecha DESC);
+GO
+
 
 CREATE TABLE dbo.UsuarioRoles (
     IdUsuario INT NOT NULL,
@@ -72,6 +91,24 @@ CREATE TABLE dbo.Clientes (
     CONSTRAINT FK_Clientes_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
 );
 GO
+
+
+CREATE TABLE dbo.PersonalCocina (
+    IdPersonalCocina INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PersonalCocina PRIMARY KEY,
+    IdUsuario        INT NOT NULL,
+    IdSede           INT NOT NULL,
+    Cargo            NVARCHAR(50) NULL, -- Chef, Ayudante, etc.
+    Activo           BIT NOT NULL CONSTRAINT DF_PersonalCocina_Activo DEFAULT (1),
+    FechaAsignacion  DATETIME2(0) NOT NULL CONSTRAINT DF_PersonalCocina_Fecha DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT UQ_PersonalCocina_Usuario UNIQUE (IdUsuario),
+    CONSTRAINT FK_PersonalCocina_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario),
+    CONSTRAINT FK_PersonalCocina_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede)
+);
+GO
+
+CREATE INDEX IX_PersonalCocina_Sede ON dbo.PersonalCocina(IdSede, Activo);
+GO
+
 
 /* ---------------------------------------------------------
    2. Sedes y turnos

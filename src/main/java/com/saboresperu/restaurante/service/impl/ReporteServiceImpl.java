@@ -23,6 +23,7 @@ public class ReporteServiceImpl implements ReporteService {
 
     private final PedidoRepository pedidoRepository;
 
+    /*
     @Override
     @Transactional(readOnly = true)
     public List<ReporteVentaDTO> obtenerVentas() {
@@ -171,4 +172,5 @@ public class ReporteServiceImpl implements ReporteService {
             throw new RuntimeException("Error al generar Excel de productos", e);
         }
     }
+     */
 }

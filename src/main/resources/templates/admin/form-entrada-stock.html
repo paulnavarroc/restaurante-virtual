@@ -1,8 +1,73 @@
-<form th:action="@{/admin/stock/entrada}" th:object="${entrada}" method="post" class="card space-y-4 p-6">
-    <select th:field="*{sedeId}" class="input" required>...</select>
-    <select th:field="*{insumoId}" class="input" required>...</select>
-    <input type="number" step="0.0001" th:field="*{cantidad}" class="input" required>
-    <input type="number" step="0.01" th:field="*{costoUnitario}" class="input">
-    <input type="text" th:field="*{observacion}" class="input">
-    <button class="btn-primary">Registrar entrada</button>
-</form>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head>
+    <title>Entrada de stock</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <section class="mx-auto max-w-lg px-4 py-8">
+        <a th:href="@{/admin/stock}" class="mb-4 inline-flex items-center gap-1 text-sm text-sky-700 hover:underline">
+            <i class="bi bi-arrow-left"></i> Volver a stock
+        </a>
+
+        <h1 class="mb-2 text-2xl font-bold text-slate-900">
+            <i class="bi bi-box-arrow-in-down text-sky-600"></i> Registrar entrada
+        </h1>
+        <p class="mb-6 text-sm text-slate-500">Aumenta cantidad disponible del insumo en la sede.</p>
+
+        <div th:if="${error}"
+             class="mb-4 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800"
+             th:text="${error}"></div>
+
+        <form th:action="@{/admin/stock/entrada}" th:object="${form}" method="post"
+              class="card space-y-4 p-6">
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">Sede *</label>
+                <select th:field="*{sedeId}" class="input" required>
+                    <option value="">Seleccione</option>
+                    <option th:each="s : ${sedes}" th:value="${s.id}" th:text="${s.nombre}"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">Insumo *</label>
+                <select th:field="*{insumoId}" class="input" required>
+                    <option value="">Seleccione</option>
+                    <option th:each="i : ${insumos}"
+                            th:value="${i.id}"
+                            th:text="${i.nombre} + ' (' + ${i.unidad} + ')'"></option>
+                </select>
+            </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">Cantidad *</label>
+                <input type="number" step="0.0001" min="0.0001" th:field="*{cantidad}"
+                       class="input" required placeholder="0.0000">
+            </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">Costo unitario (S/)</label>
+                <input type="number" step="0.01" min="0" th:field="*{costoUnitario}"
+                       class="input" placeholder="Opcional">
+            </div>
+
+            <div>
+                <label class="mb-1.5 block text-sm font-medium text-slate-700">Observación</label>
+                <input type="text" th:field="*{observacion}" class="input"
+                       placeholder="Compra, donación, ajuste…">
+            </div>
+
+            <div class="flex flex-wrap gap-2 pt-2">
+                <button type="submit" class="btn-primary">
+                    <i class="bi bi-check-lg"></i> Registrar
+                </button>
+                <a th:href="@{/admin/stock}" class="btn-secondary">Cancelar</a>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

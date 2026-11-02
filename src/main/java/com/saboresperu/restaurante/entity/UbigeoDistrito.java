@@ -2,6 +2,8 @@ package com.saboresperu.restaurante.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
 
@@ -15,11 +17,12 @@ import java.math.BigDecimal;
 public class UbigeoDistrito {
 
     @Id
-    @Column(name = "IdDistrito", length = 6)
+    @Column(name = "IdDistrito", length = 6, columnDefinition = "char(6)")
+    @JdbcTypeCode(SqlTypes.CHAR)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "IdProvincia", nullable = false)
+    @JoinColumn(name = "IdProvincia", nullable = false, columnDefinition = "char(4)")
     private UbigeoProvincia provincia;
 
     @Column(name = "Nombre", nullable = false, length = 100)

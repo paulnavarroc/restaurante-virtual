@@ -2,12 +2,16 @@ package com.saboresperu.restaurante.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Data
-@ConfigurationProperties(prefix = "tenants")
+@ConfigurationProperties(prefix = "app.tenants")
+@Profile("multi-tenant")
+@Component
 public class TenantProperties {
 
     private String defaultTenant = "lima";

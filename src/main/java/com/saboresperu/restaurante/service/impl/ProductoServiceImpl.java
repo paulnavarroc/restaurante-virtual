@@ -20,15 +20,27 @@ public class ProductoServiceImpl implements ProductoService {
     @Override
     @Transactional(readOnly = true)
     public List<ProductoDTO> listarActivos() {
-        return productoRepository.findByActivoTrue().stream().map(this::toDTO).toList();
+        return productoRepository.findByActivoTrue().stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ProductoDTO obtenerPorId(Integer id) {
-        Producto p = productoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+        Producto p = productoRepository.findByIdWithDetails(id)
+                .orElseGet(() -> productoRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado")));
         return toDTO(p);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProductoDTO> listarDisponibles(Integer regionId, Integer categoriaId, String busqueda) {
+        String q = (busqueda != null && !busqueda.isBlank()) ? busqueda.trim() : null;
+        return productoRepository.findDisponibles(regionId, categoriaId, q).stream()
+                .map(this::toDTO)
+                .toList();
     }
 
     private ProductoDTO toDTO(Producto p) {

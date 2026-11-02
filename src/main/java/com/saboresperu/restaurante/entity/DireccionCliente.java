@@ -25,7 +25,7 @@ public class DireccionCliente {
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "IdDistrito", nullable = false)
+    @JoinColumn(name = "IdDistrito", nullable = false, columnDefinition = "char(6)")
     private UbigeoDistrito distrito;
 
     @Column(name = "Alias", length = 50)
