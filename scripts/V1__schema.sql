@@ -1,11 +1,11 @@
-﻿USE master;
+/*
+  Sabores Per� � Schema v3 (English, PascalCase)
+  SQL Server � create from scratch
+*/
+USE master;
 GO
 
-/* ============================================================
-   1. CREACIÓN DE BASE DE DATOS
-   ============================================================ */
-
-IF DB_ID('SaboresPeru') IS NULL
+IF DB_ID(N'SaboresPeru') IS NULL
 BEGIN
     CREATE DATABASE SaboresPeru;
 END
@@ -14,894 +14,830 @@ GO
 USE SaboresPeru;
 GO
 
-
 SET ANSI_NULLS ON;
 SET QUOTED_IDENTIFIER ON;
 GO
 
-
-
-/* ---------------------------------------------------------
-   1. Seguridad y personas
-   --------------------------------------------------------- */
+/* =========================================================
+   1. Security � users & roles
+   ========================================================= */
 
 CREATE TABLE dbo.Roles (
-    IdRol           INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Roles PRIMARY KEY,
-    Nombre          NVARCHAR(50)  NOT NULL,
-    Descripcion     NVARCHAR(200) NULL,
-    Activo          BIT NOT NULL CONSTRAINT DF_Roles_Activo DEFAULT (1),
-    CONSTRAINT UQ_Roles_Nombre UNIQUE (Nombre)
+    IdRole          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Roles PRIMARY KEY,
+    Name            NVARCHAR(50)  NOT NULL,
+    Description     NVARCHAR(200) NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_Roles_IsActive DEFAULT (1),
+    CreatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_Roles_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT UQ_Roles_Name UNIQUE (Name)
 );
 GO
 
-CREATE TABLE dbo.Usuarios (
-    IdUsuario       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Usuarios PRIMARY KEY,
-    Nombre          NVARCHAR(100) NOT NULL,
-    Apellido        NVARCHAR(100) NOT NULL,
-    Correo          NVARCHAR(150) NOT NULL,
-    ContrasenaHash  NVARCHAR(255) NOT NULL,
-    Telefono        NVARCHAR(30)  NULL,
-    Activo          BIT NOT NULL CONSTRAINT DF_Usuarios_Activo DEFAULT (1),
-    FechaRegistro   DATETIME2(0) NOT NULL CONSTRAINT DF_Usuarios_Fecha DEFAULT (SYSUTCDATETIME()),
-	UltimoAcceso     DATETIME2(0) NULL,
-    UltimaIp         NVARCHAR(45) NULL,
-    UltimoUserAgent  NVARCHAR(500) NULL,
-    CONSTRAINT UQ_Usuarios_Correo UNIQUE (Correo)
+CREATE TABLE dbo.Users (
+    IdUser          INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Users PRIMARY KEY,
+    FirstName       NVARCHAR(100) NOT NULL,
+    LastName        NVARCHAR(100) NOT NULL,
+    Email           NVARCHAR(150) NOT NULL,
+    PasswordHash    NVARCHAR(255) NOT NULL,
+    Phone           NVARCHAR(30)  NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_Users_IsActive DEFAULT (1),
+    CreatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    LastAccessAt    DATETIME2(0) NULL,
+    LastIp          NVARCHAR(45)  NULL,
+    LastUserAgent   NVARCHAR(500) NULL,
+    CONSTRAINT UQ_Users_Email UNIQUE (Email)
 );
 GO
 
-CREATE TABLE dbo.UsuarioAccesos (
-    IdAcceso           BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UsuarioAccesos PRIMARY KEY,
-    IdUsuario          INT NULL,
-    CorreoIntentado    NVARCHAR(150) NULL,
-    Evento             NVARCHAR(30) NOT NULL,
-    Exitoso            BIT NOT NULL CONSTRAINT DF_Acceso_Ok DEFAULT (1),
-    Ip                 NVARCHAR(45) NULL,
-    UserAgent          NVARCHAR(500) NULL,
-    Navegador          NVARCHAR(80) NULL,
-    SistemaOperativo   NVARCHAR(80) NULL,
-    Dispositivo        NVARCHAR(40) NULL,
-    SessionId          NVARCHAR(100) NULL,
-    Detalle            NVARCHAR(300) NULL,
-    Fecha              DATETIME2(0) NOT NULL CONSTRAINT DF_Acceso_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_Acceso_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
+CREATE TABLE dbo.UserRoles (
+    IdUser INT NOT NULL,
+    IdRole INT NOT NULL,
+    CONSTRAINT PK_UserRoles PRIMARY KEY (IdUser, IdRole),
+    CONSTRAINT FK_UserRoles_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT FK_UserRoles_Role FOREIGN KEY (IdRole) REFERENCES dbo.Roles(IdRole)
 );
 GO
 
-CREATE INDEX IX_Accesos_Usuario_Fecha ON dbo.UsuarioAccesos(IdUsuario, Fecha DESC);
-CREATE INDEX IX_Accesos_Fecha ON dbo.UsuarioAccesos(Fecha DESC);
-GO
-
-CREATE TABLE dbo.UsuarioRoles (
-    IdUsuario INT NOT NULL,
-    IdRol     INT NOT NULL,
-    CONSTRAINT PK_UsuarioRoles PRIMARY KEY (IdUsuario, IdRol),
-    CONSTRAINT FK_UsuarioRoles_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario),
-    CONSTRAINT FK_UsuarioRoles_Rol FOREIGN KEY (IdRol) REFERENCES dbo.Roles(IdRol)
+CREATE TABLE dbo.Customers (
+    IdCustomer      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Customers PRIMARY KEY,
+    IdUser          INT NOT NULL,
+    DocumentType    NVARCHAR(20)  NULL,
+    DocumentNumber  NVARCHAR(30)  NULL,
+    CreatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_Customers_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT UQ_Customers_User UNIQUE (IdUser),
+    CONSTRAINT FK_Customers_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
 );
 GO
 
-CREATE TABLE dbo.Clientes (
-    IdCliente       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Clientes PRIMARY KEY,
-    IdUsuario       INT NOT NULL,
-    DocumentoTipo   NVARCHAR(20)  NULL,
-    DocumentoNumero NVARCHAR(30)  NULL,
-    FechaRegistro   DATETIME2(0) NOT NULL CONSTRAINT DF_Clientes_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT UQ_Clientes_Usuario UNIQUE (IdUsuario),
-    CONSTRAINT FK_Clientes_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
-);
-GO
+/* =========================================================
+   2. Branches & shifts
+   ========================================================= */
 
-
-CREATE TABLE dbo.PersonalCocina (
-    IdPersonalCocina INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PersonalCocina PRIMARY KEY,
-    IdUsuario        INT NOT NULL,
-    IdSede           INT NOT NULL,
-    Cargo            NVARCHAR(50) NULL, -- Chef, Ayudante, etc.
-    Activo           BIT NOT NULL CONSTRAINT DF_PersonalCocina_Activo DEFAULT (1),
-    FechaAsignacion  DATETIME2(0) NOT NULL CONSTRAINT DF_PersonalCocina_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT UQ_PersonalCocina_Usuario UNIQUE (IdUsuario),
-    CONSTRAINT FK_PersonalCocina_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario),
-    CONSTRAINT FK_PersonalCocina_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede)
-);
-GO
-
-CREATE INDEX IX_PersonalCocina_Sede ON dbo.PersonalCocina(IdSede, Activo);
-GO
-
-
-/* ---------------------------------------------------------
-   2. Sedes y turnos
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.Sedes (
-    IdSede              INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Sedes PRIMARY KEY,
-    Nombre              NVARCHAR(120) NOT NULL,
-    Direccion           NVARCHAR(300) NOT NULL,
+CREATE TABLE dbo.Branches (
+    IdBranch            INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Branches PRIMARY KEY,
+    Name                NVARCHAR(120) NOT NULL,
+    Address             NVARCHAR(300) NOT NULL,
     Lat                 DECIMAL(10,7) NOT NULL,
     Lng                 DECIMAL(10,7) NOT NULL,
-    RadioCoberturaKm    DECIMAL(8,2)  NOT NULL CONSTRAINT DF_Sedes_Radio DEFAULT (5.00),
-    Activa              BIT NOT NULL CONSTRAINT DF_Sedes_Activa DEFAULT (1),
+    CoverageRadiusKm    DECIMAL(8,2)  NOT NULL CONSTRAINT DF_Branches_Radius DEFAULT (5.00),
+    IsActive            BIT NOT NULL CONSTRAINT DF_Branches_IsActive DEFAULT (1),
     TenantKey           NVARCHAR(50)  NULL,
-    Telefono            NVARCHAR(30)  NULL,
-    FechaCreacion       DATETIME2(0) NOT NULL CONSTRAINT DF_Sedes_Fecha DEFAULT (SYSUTCDATETIME())
+    Phone               NVARCHAR(30)  NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_Branches_CreatedAt DEFAULT (SYSUTCDATETIME())
 );
 GO
 
-CREATE TABLE dbo.SedeTurnos (
-    IdSedeTurno INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SedeTurnos PRIMARY KEY,
-    IdSede      INT NOT NULL,
-    Turno       NVARCHAR(20) NOT NULL,  -- DESAYUNO | ALMUERZO | CENA
-    HoraInicio  TIME(0) NOT NULL,
-    HoraFin     TIME(0) NOT NULL,
-    Activo      BIT NOT NULL CONSTRAINT DF_SedeTurnos_Activo DEFAULT (1),
-    CONSTRAINT FK_SedeTurnos_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT UQ_SedeTurnos UNIQUE (IdSede, Turno),
-    CONSTRAINT CK_SedeTurnos_Turno CHECK (Turno IN (N'DESAYUNO', N'ALMUERZO', N'CENA'))
+CREATE TABLE dbo.BranchShifts (
+    IdBranchShift   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_BranchShifts PRIMARY KEY,
+    IdBranch        INT NOT NULL,
+    Shift           NVARCHAR(20) NOT NULL,  -- BREAKFAST | LUNCH | DINNER
+    StartTime       TIME(0) NOT NULL,
+    EndTime         TIME(0) NOT NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_BranchShifts_IsActive DEFAULT (1),
+    CONSTRAINT FK_BranchShifts_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT UQ_BranchShifts UNIQUE (IdBranch, Shift),
+    CONSTRAINT CK_BranchShifts_Shift CHECK (Shift IN (N'BREAKFAST', N'LUNCH', N'DINNER'))
 );
 GO
 
-/* ---------------------------------------------------------
-   3. Ubigeo y direcciones
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.UbigeoDepartamentos (
-    IdDepartamento CHAR(2) NOT NULL CONSTRAINT PK_UbigeoDepartamentos PRIMARY KEY, -- INEI
-    Nombre         NVARCHAR(100) NOT NULL
+CREATE TABLE dbo.BranchSettings (
+    IdBranchSetting INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_BranchSettings PRIMARY KEY,
+    IdBranch        INT NOT NULL,
+    SettingKey      NVARCHAR(80) NOT NULL,
+    SettingValue    NVARCHAR(500) NULL,
+    CONSTRAINT FK_BranchSettings_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT UQ_BranchSettings UNIQUE (IdBranch, SettingKey)
 );
 GO
 
-CREATE TABLE dbo.UbigeoProvincias (
-    IdProvincia    CHAR(4) NOT NULL CONSTRAINT PK_UbigeoProvincias PRIMARY KEY,
-    IdDepartamento CHAR(2) NOT NULL,
-    Nombre         NVARCHAR(100) NOT NULL,
-    CONSTRAINT FK_Provincias_Departamento FOREIGN KEY (IdDepartamento)
-        REFERENCES dbo.UbigeoDepartamentos(IdDepartamento)
+CREATE TABLE dbo.BranchConfigs (
+    IdBranch                INT NOT NULL CONSTRAINT PK_BranchConfigs PRIMARY KEY,
+    MinOrderAmount          DECIMAL(10,2) NULL,
+    DefaultDeliveryFee      DECIMAL(10,2) NULL,
+    FreeDeliveryFromAmount  DECIMAL(10,2) NULL,
+    AvgPrepTimeMinutes      INT NULL,
+    AcceptsOnlineOrders     BIT NOT NULL CONSTRAINT DF_BranchConfigs_Online DEFAULT (1),
+    OpenTime                TIME(0) NULL,
+    CloseTime               TIME(0) NULL,
+    UpdatedAt               DATETIME2(0) NOT NULL CONSTRAINT DF_BranchConfigs_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_BranchConfigs_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch)
 );
 GO
 
-CREATE TABLE dbo.UbigeoDistritos (
-    IdDistrito  CHAR(6) NOT NULL CONSTRAINT PK_UbigeoDistritos PRIMARY KEY,
-    IdProvincia CHAR(4) NOT NULL,
-    Nombre      NVARCHAR(100) NOT NULL,
-    LatCentro   DECIMAL(10,7) NULL,
-    LngCentro   DECIMAL(10,7) NULL,
-    CONSTRAINT FK_Distritos_Provincia FOREIGN KEY (IdProvincia)
-        REFERENCES dbo.UbigeoProvincias(IdProvincia)
+/* =========================================================
+   3. Geo & customer addresses
+   ========================================================= */
+
+CREATE TABLE dbo.GeoDepartments (
+    IdDepartment    CHAR(2) NOT NULL CONSTRAINT PK_GeoDepartments PRIMARY KEY,
+    Name            NVARCHAR(100) NOT NULL
 );
 GO
 
-CREATE TABLE dbo.DireccionesCliente (
-    IdDireccion   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DireccionesCliente PRIMARY KEY,
-    IdCliente     INT NOT NULL,
-    IdDistrito    CHAR(6) NOT NULL,
-    Alias         NVARCHAR(50)  NULL,
-    Urbanizacion  NVARCHAR(120) NULL,
-    Calle         NVARCHAR(200) NOT NULL,
-    Numero        NVARCHAR(30)  NULL,
-    Referencia    NVARCHAR(300) NULL,
-    Lat           DECIMAL(10,7) NULL,
-    Lng           DECIMAL(10,7) NULL,
-    EsPrincipal   BIT NOT NULL CONSTRAINT DF_Dir_Principal DEFAULT (0),
-    Activa        BIT NOT NULL CONSTRAINT DF_Dir_Activa DEFAULT (1),
-    FechaCreacion DATETIME2(0) NOT NULL CONSTRAINT DF_Dir_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_Dir_Cliente FOREIGN KEY (IdCliente) REFERENCES dbo.Clientes(IdCliente),
-    CONSTRAINT FK_Dir_Distrito FOREIGN KEY (IdDistrito) REFERENCES dbo.UbigeoDistritos(IdDistrito)
+CREATE TABLE dbo.GeoProvinces (
+    IdProvince      CHAR(4) NOT NULL CONSTRAINT PK_GeoProvinces PRIMARY KEY,
+    IdDepartment    CHAR(2) NOT NULL,
+    Name            NVARCHAR(100) NOT NULL,
+    CONSTRAINT FK_GeoProvinces_Department FOREIGN KEY (IdDepartment)
+        REFERENCES dbo.GeoDepartments(IdDepartment)
 );
 GO
 
-CREATE INDEX IX_Direcciones_Cliente ON dbo.DireccionesCliente(IdCliente, Activa);
-GO
-
-/* ---------------------------------------------------------
-   4. Catálogo, recetas, stock
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.Categorias (
-    IdCategoria INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Categorias PRIMARY KEY,
-    Nombre      NVARCHAR(100) NOT NULL,
-    Descripcion NVARCHAR(300) NULL,
-    Activo      BIT NOT NULL CONSTRAINT DF_Categorias_Activo DEFAULT (1),
-    CONSTRAINT UQ_Categorias_Nombre UNIQUE (Nombre)
+CREATE TABLE dbo.GeoDistricts (
+    IdDistrict      CHAR(6) NOT NULL CONSTRAINT PK_GeoDistricts PRIMARY KEY,
+    IdProvince      CHAR(4) NOT NULL,
+    Name            NVARCHAR(100) NOT NULL,
+    CenterLat       DECIMAL(10,7) NULL,
+    CenterLng       DECIMAL(10,7) NULL,
+    CONSTRAINT FK_GeoDistricts_Province FOREIGN KEY (IdProvince)
+        REFERENCES dbo.GeoProvinces(IdProvince)
 );
 GO
 
-CREATE TABLE dbo.Regiones (
-    IdRegion    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Regiones PRIMARY KEY,
-    Nombre      NVARCHAR(50) NOT NULL,  -- COSTA, SIERRA, SELVA
-    Descripcion NVARCHAR(300) NULL,
-    Activo      BIT NOT NULL CONSTRAINT DF_Regiones_Activo DEFAULT (1),
-    CONSTRAINT UQ_Regiones_Nombre UNIQUE (Nombre)
+CREATE TABLE dbo.CustomerAddresses (
+    IdAddress       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CustomerAddresses PRIMARY KEY,
+    IdCustomer      INT NOT NULL,
+    IdDistrict      CHAR(6) NOT NULL,
+    Alias           NVARCHAR(50)  NULL,
+    Urbanization    NVARCHAR(120) NULL,
+    Street          NVARCHAR(200) NOT NULL,
+    Number          NVARCHAR(30)  NULL,
+    Reference       NVARCHAR(300) NULL,
+    Lat             DECIMAL(10,7) NULL,
+    Lng             DECIMAL(10,7) NULL,
+    IsPrimary       BIT NOT NULL CONSTRAINT DF_CustomerAddresses_IsPrimary DEFAULT (0),
+    IsActive        BIT NOT NULL CONSTRAINT DF_CustomerAddresses_IsActive DEFAULT (1),
+    CreatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_CustomerAddresses_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_CustomerAddresses_Customer FOREIGN KEY (IdCustomer) REFERENCES dbo.Customers(IdCustomer),
+    CONSTRAINT FK_CustomerAddresses_District FOREIGN KEY (IdDistrict) REFERENCES dbo.GeoDistricts(IdDistrict)
 );
 GO
 
-CREATE TABLE dbo.Productos (
-    IdProducto            INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Productos PRIMARY KEY,
-    IdCategoria           INT NOT NULL,
-    IdRegion              INT NULL,
-    Nombre                NVARCHAR(150) NOT NULL,
-    Descripcion           NVARCHAR(1000) NULL,
-    PrecioBase            DECIMAL(10,2) NOT NULL,
-    ImagenUrl             NVARCHAR(500) NULL,
-    TiempoPreparacionMin  INT NULL,
-    StockIlimitado        BIT NOT NULL CONSTRAINT DF_Prod_StockIlim DEFAULT (0),
-    Activo                BIT NOT NULL CONSTRAINT DF_Prod_Activo DEFAULT (1),
-    FechaRegistro         DATETIME2(0) NOT NULL CONSTRAINT DF_Prod_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_Prod_Categoria FOREIGN KEY (IdCategoria) REFERENCES dbo.Categorias(IdCategoria),
-    CONSTRAINT FK_Prod_Region FOREIGN KEY (IdRegion) REFERENCES dbo.Regiones(IdRegion),
-    CONSTRAINT CK_Prod_Precio CHECK (PrecioBase >= 0)
+CREATE INDEX IX_CustomerAddresses_Customer ON dbo.CustomerAddresses(IdCustomer, IsActive);
+GO
+
+/* =========================================================
+   4. Catalog, recipes, stock
+   ========================================================= */
+
+CREATE TABLE dbo.Categories (
+    IdCategory      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Categories PRIMARY KEY,
+    Name            NVARCHAR(100) NOT NULL,
+    Description     NVARCHAR(300) NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_Categories_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Categories_Name UNIQUE (Name)
 );
 GO
 
-CREATE TABLE dbo.Insumos (
-    IdInsumo           INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Insumos PRIMARY KEY,
-    Nombre             NVARCHAR(150) NOT NULL,
-    Unidad             NVARCHAR(20)  NOT NULL, -- kg, g, L, ml, und
-    StockIlimitado     BIT NOT NULL CONSTRAINT DF_Insumo_Ilim DEFAULT (0),
-    StockMinimoAlerta  DECIMAL(12,4) NULL,
-    Activo             BIT NOT NULL CONSTRAINT DF_Insumo_Activo DEFAULT (1),
-    CONSTRAINT UQ_Insumos_Nombre UNIQUE (Nombre)
+CREATE TABLE dbo.Regions (
+    IdRegion        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Regions PRIMARY KEY,
+    Name            NVARCHAR(50) NOT NULL,  -- COAST | HIGHLANDS | JUNGLE
+    Description     NVARCHAR(300) NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_Regions_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Regions_Name UNIQUE (Name)
 );
 GO
 
-CREATE TABLE dbo.Recetas (
-    IdReceta    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Recetas PRIMARY KEY,
-    IdProducto  INT NOT NULL,
-    Version     INT NOT NULL CONSTRAINT DF_Receta_Version DEFAULT (1),
-    Activa      BIT NOT NULL CONSTRAINT DF_Receta_Activa DEFAULT (1),
-    CONSTRAINT UQ_Recetas_Producto UNIQUE (IdProducto),
-    CONSTRAINT FK_Recetas_Producto FOREIGN KEY (IdProducto) REFERENCES dbo.Productos(IdProducto)
+CREATE TABLE dbo.Products (
+    IdProduct               INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Products PRIMARY KEY,
+    IdCategory              INT NOT NULL,
+    IdRegion                INT NULL,
+    Name                    NVARCHAR(150) NOT NULL,
+    Description             NVARCHAR(1000) NULL,
+    BasePrice               DECIMAL(10,2) NOT NULL,
+    ImageUrl                NVARCHAR(500) NULL,
+    PrepTimeMinutes         INT NULL,
+    IsUnlimitedStock        BIT NOT NULL CONSTRAINT DF_Products_Unlimited DEFAULT (0),
+    IsActive                BIT NOT NULL CONSTRAINT DF_Products_IsActive DEFAULT (1),
+    CreatedAt               DATETIME2(0) NOT NULL CONSTRAINT DF_Products_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_Products_Category FOREIGN KEY (IdCategory) REFERENCES dbo.Categories(IdCategory),
+    CONSTRAINT FK_Products_Region FOREIGN KEY (IdRegion) REFERENCES dbo.Regions(IdRegion),
+    CONSTRAINT CK_Products_BasePrice CHECK (BasePrice >= 0)
 );
 GO
 
-CREATE TABLE dbo.RecetaDetalles (
-    IdRecetaDetalle INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RecetaDetalles PRIMARY KEY,
-    IdReceta        INT NOT NULL,
-    IdInsumo        INT NOT NULL,
-    Cantidad        DECIMAL(12,4) NOT NULL,
-    CONSTRAINT FK_RecDet_Receta FOREIGN KEY (IdReceta) REFERENCES dbo.Recetas(IdReceta),
-    CONSTRAINT FK_RecDet_Insumo FOREIGN KEY (IdInsumo) REFERENCES dbo.Insumos(IdInsumo),
-    CONSTRAINT UQ_Receta_Insumo UNIQUE (IdReceta, IdInsumo),
-    CONSTRAINT CK_RecDet_Cantidad CHECK (Cantidad > 0)
+CREATE TABLE dbo.Ingredients (
+    IdIngredient        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Ingredients PRIMARY KEY,
+    Name                NVARCHAR(150) NOT NULL,
+    Unit                NVARCHAR(20)  NOT NULL, -- kg, g, L, ml, unit
+    IsUnlimitedStock    BIT NOT NULL CONSTRAINT DF_Ingredients_Unlimited DEFAULT (0),
+    MinStockAlert       DECIMAL(12,4) NULL,
+    IsActive            BIT NOT NULL CONSTRAINT DF_Ingredients_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Ingredients_Name UNIQUE (Name)
 );
 GO
 
-CREATE TABLE dbo.StockInsumos (
-    IdStockInsumo       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StockInsumos PRIMARY KEY,
-    IdSede              INT NOT NULL,
-    IdInsumo            INT NOT NULL,
-    CantidadDisponible  DECIMAL(12,4) NOT NULL CONSTRAINT DF_Stock_Disp DEFAULT (0),
-    CantidadReservada   DECIMAL(12,4) NOT NULL CONSTRAINT DF_Stock_Res DEFAULT (0),
-    CostoPromedio       DECIMAL(12,4) NULL,
-    UltimoCosto         DECIMAL(12,4) NULL,
-    StockMinimoAlerta   DECIMAL(12,4) NULL,
-    Version             INT NOT NULL CONSTRAINT DF_Stock_Version DEFAULT (0),
-    CONSTRAINT FK_Stock_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT FK_Stock_Insumo FOREIGN KEY (IdInsumo) REFERENCES dbo.Insumos(IdInsumo),
-    CONSTRAINT UQ_Stock_Sede_Insumo UNIQUE (IdSede, IdInsumo),
-    CONSTRAINT CK_Stock_Disp CHECK (CantidadDisponible >= 0),
-    CONSTRAINT CK_Stock_Res CHECK (CantidadReservada >= 0)
+CREATE TABLE dbo.Recipes (
+    IdRecipe        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Recipes PRIMARY KEY,
+    IdProduct       INT NOT NULL,
+    Version         INT NOT NULL CONSTRAINT DF_Recipes_Version DEFAULT (1),
+    IsActive        BIT NOT NULL CONSTRAINT DF_Recipes_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Recipes_Product UNIQUE (IdProduct),
+    CONSTRAINT FK_Recipes_Product FOREIGN KEY (IdProduct) REFERENCES dbo.Products(IdProduct)
 );
 GO
 
-CREATE TABLE dbo.MovimientosStock (
-    IdMovimiento   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_MovimientosStock PRIMARY KEY,
-    IdSede         INT NOT NULL,
-    IdInsumo       INT NOT NULL,
-    Tipo           NVARCHAR(20) NOT NULL,
-    Cantidad       DECIMAL(12,4) NOT NULL,
-    CostoUnitario  DECIMAL(12,4) NULL,
-    IdPedido       INT NULL, -- FK se agrega después de Pedidos
-    IdUsuario      INT NULL,
-    Observacion    NVARCHAR(400) NULL,
-    Fecha          DATETIME2(0) NOT NULL CONSTRAINT DF_MovStock_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_MovStock_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT FK_MovStock_Insumo FOREIGN KEY (IdInsumo) REFERENCES dbo.Insumos(IdInsumo),
-    CONSTRAINT FK_MovStock_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario),
-    CONSTRAINT CK_MovStock_Tipo CHECK (Tipo IN (
-        N'ENTRADA', N'SALIDA', N'AJUSTE', N'RESERVA', N'CONSUMO', N'LIBERACION'
+CREATE TABLE dbo.RecipeItems (
+    IdRecipeItem    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_RecipeItems PRIMARY KEY,
+    IdRecipe        INT NOT NULL,
+    IdIngredient    INT NOT NULL,
+    Quantity        DECIMAL(12,4) NOT NULL,
+    CONSTRAINT FK_RecipeItems_Recipe FOREIGN KEY (IdRecipe) REFERENCES dbo.Recipes(IdRecipe),
+    CONSTRAINT FK_RecipeItems_Ingredient FOREIGN KEY (IdIngredient) REFERENCES dbo.Ingredients(IdIngredient),
+    CONSTRAINT UQ_RecipeItems UNIQUE (IdRecipe, IdIngredient),
+    CONSTRAINT CK_RecipeItems_Quantity CHECK (Quantity > 0)
+);
+GO
+
+CREATE TABLE dbo.IngredientStocks (
+    IdIngredientStock   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_IngredientStocks PRIMARY KEY,
+    IdBranch            INT NOT NULL,
+    IdIngredient        INT NOT NULL,
+    QuantityAvailable   DECIMAL(12,4) NOT NULL CONSTRAINT DF_IngredientStocks_Available DEFAULT (0),
+    QuantityReserved    DECIMAL(12,4) NOT NULL CONSTRAINT DF_IngredientStocks_Reserved DEFAULT (0),
+    AverageCost         DECIMAL(12,4) NULL,
+    LastCost            DECIMAL(12,4) NULL,
+    MinStockAlert       DECIMAL(12,4) NULL,
+    Version             INT NOT NULL CONSTRAINT DF_IngredientStocks_Version DEFAULT (0),
+    CONSTRAINT FK_IngredientStocks_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_IngredientStocks_Ingredient FOREIGN KEY (IdIngredient) REFERENCES dbo.Ingredients(IdIngredient),
+    CONSTRAINT UQ_IngredientStocks UNIQUE (IdBranch, IdIngredient),
+    CONSTRAINT CK_IngredientStocks_Available CHECK (QuantityAvailable >= 0),
+    CONSTRAINT CK_IngredientStocks_Reserved CHECK (QuantityReserved >= 0)
+);
+GO
+
+CREATE TABLE dbo.StockMovements (
+    IdStockMovement     INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_StockMovements PRIMARY KEY,
+    IdBranch            INT NOT NULL,
+    IdIngredient        INT NOT NULL,
+    MovementType        NVARCHAR(20) NOT NULL,
+    Quantity            DECIMAL(12,4) NOT NULL,
+    UnitCost            DECIMAL(12,4) NULL,
+    IdOrder             INT NULL, -- FK after Orders
+    IdUser              INT NULL,
+    Notes               NVARCHAR(400) NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_StockMovements_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_StockMovements_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_StockMovements_Ingredient FOREIGN KEY (IdIngredient) REFERENCES dbo.Ingredients(IdIngredient),
+    CONSTRAINT FK_StockMovements_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT CK_StockMovements_Type CHECK (MovementType IN (
+        N'IN', N'OUT', N'ADJUST', N'RESERVE', N'CONSUME', N'RELEASE'
     )),
-    CONSTRAINT CK_MovStock_Cantidad CHECK (Cantidad > 0)
+    CONSTRAINT CK_StockMovements_Quantity CHECK (Quantity > 0)
 );
 GO
 
-CREATE INDEX IX_MovStock_Sede_Insumo_Fecha
-    ON dbo.MovimientosStock(IdSede, IdInsumo, Fecha DESC);
+CREATE INDEX IX_StockMovements_Branch_Ingredient
+    ON dbo.StockMovements(IdBranch, IdIngredient, CreatedAt DESC);
 GO
 
-/* ---------------------------------------------------------
-   5. Menú del día
-   --------------------------------------------------------- */
+/* =========================================================
+   5. Daily menu
+   ========================================================= */
 
-CREATE TABLE dbo.MenusDia (
-    IdMenuDia              INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_MenusDia PRIMARY KEY,
-    IdSede                 INT NOT NULL,
-    Fecha                  DATE NOT NULL,
-    Estado                 NVARCHAR(20) NOT NULL CONSTRAINT DF_MenuDia_Estado DEFAULT (N'BORRADOR'),
-    IdUsuarioPublicacion   INT NULL,
-    FechaPublicacion       DATETIME2(0) NULL,
-    CONSTRAINT FK_MenuDia_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT FK_MenuDia_Usuario FOREIGN KEY (IdUsuarioPublicacion) REFERENCES dbo.Usuarios(IdUsuario),
-    CONSTRAINT UQ_MenuDia_Sede_Fecha UNIQUE (IdSede, Fecha),
-    CONSTRAINT CK_MenuDia_Estado CHECK (Estado IN (N'BORRADOR', N'PUBLICADO', N'CERRADO'))
+CREATE TABLE dbo.DailyMenus (
+    IdDailyMenu         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DailyMenus PRIMARY KEY,
+    IdBranch            INT NOT NULL,
+    MenuDate            DATE NOT NULL,
+    Status              NVARCHAR(20) NOT NULL CONSTRAINT DF_DailyMenus_Status DEFAULT (N'DRAFT'),
+    IdPublishedByUser   INT NULL,
+    PublishedAt         DATETIME2(0) NULL,
+    CONSTRAINT FK_DailyMenus_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_DailyMenus_User FOREIGN KEY (IdPublishedByUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT UQ_DailyMenus_Branch_Date UNIQUE (IdBranch, MenuDate),
+    CONSTRAINT CK_DailyMenus_Status CHECK (Status IN (N'DRAFT', N'PUBLISHED', N'CLOSED'))
 );
 GO
 
-CREATE TABLE dbo.MenuDiaItems (
-    IdMenuDiaItem   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_MenuDiaItems PRIMARY KEY,
-    IdMenuDia       INT NOT NULL,
-    IdProducto      INT NOT NULL,
-    Disponible      BIT NOT NULL CONSTRAINT DF_MenuItem_Disp DEFAULT (1),
-    PrecioDia       DECIMAL(10,2) NULL,
-    CupoMaximo      INT NULL,
-    CantidadVendida INT NOT NULL CONSTRAINT DF_MenuItem_Vend DEFAULT (0),
-    CONSTRAINT FK_MenuItem_Menu FOREIGN KEY (IdMenuDia) REFERENCES dbo.MenusDia(IdMenuDia),
-    CONSTRAINT FK_MenuItem_Producto FOREIGN KEY (IdProducto) REFERENCES dbo.Productos(IdProducto),
-    CONSTRAINT UQ_MenuItem UNIQUE (IdMenuDia, IdProducto),
-    CONSTRAINT CK_MenuItem_Precio CHECK (PrecioDia IS NULL OR PrecioDia >= 0)
+CREATE TABLE dbo.DailyMenuItems (
+    IdDailyMenuItem     INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DailyMenuItems PRIMARY KEY,
+    IdDailyMenu         INT NOT NULL,
+    IdProduct           INT NOT NULL,
+    IsAvailable         BIT NOT NULL CONSTRAINT DF_DailyMenuItems_Available DEFAULT (1),
+    PriceOverride       DECIMAL(10,2) NULL,
+    MaxQuota            INT NULL,
+    SoldQuantity        INT NOT NULL CONSTRAINT DF_DailyMenuItems_Sold DEFAULT (0),
+    CONSTRAINT FK_DailyMenuItems_Menu FOREIGN KEY (IdDailyMenu) REFERENCES dbo.DailyMenus(IdDailyMenu),
+    CONSTRAINT FK_DailyMenuItems_Product FOREIGN KEY (IdProduct) REFERENCES dbo.Products(IdProduct),
+    CONSTRAINT UQ_DailyMenuItems UNIQUE (IdDailyMenu, IdProduct),
+    CONSTRAINT CK_DailyMenuItems_Price CHECK (PriceOverride IS NULL OR PriceOverride >= 0)
 );
 GO
 
-CREATE TABLE dbo.MenuDiaItemTurnos (
-    IdMenuDiaItem INT NOT NULL,
-    IdSedeTurno   INT NOT NULL,
-    CONSTRAINT PK_MenuDiaItemTurnos PRIMARY KEY (IdMenuDiaItem, IdSedeTurno),
-    CONSTRAINT FK_MIT_Item FOREIGN KEY (IdMenuDiaItem) REFERENCES dbo.MenuDiaItems(IdMenuDiaItem),
-    CONSTRAINT FK_MIT_Turno FOREIGN KEY (IdSedeTurno) REFERENCES dbo.SedeTurnos(IdSedeTurno)
+CREATE TABLE dbo.DailyMenuItemShifts (
+    IdDailyMenuItem INT NOT NULL,
+    IdBranchShift   INT NOT NULL,
+    CONSTRAINT PK_DailyMenuItemShifts PRIMARY KEY (IdDailyMenuItem, IdBranchShift),
+    CONSTRAINT FK_DailyMenuItemShifts_Item FOREIGN KEY (IdDailyMenuItem) REFERENCES dbo.DailyMenuItems(IdDailyMenuItem),
+    CONSTRAINT FK_DailyMenuItemShifts_Shift FOREIGN KEY (IdBranchShift) REFERENCES dbo.BranchShifts(IdBranchShift)
 );
 GO
 
-/* ---------------------------------------------------------
-   6. Promociones y cupones
-   --------------------------------------------------------- */
+/* =========================================================
+   6. Promotions & coupons
+   ========================================================= */
 
-CREATE TABLE dbo.Promociones (
-    IdPromocion      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Promociones PRIMARY KEY,
-    Nombre           NVARCHAR(150) NOT NULL,
-    Tipo             NVARCHAR(30)  NOT NULL,
-    Valor            DECIMAL(10,2) NULL,
-    LlevaN           INT NULL,
-    PagaM            INT NULL,
-    IdSede           INT NULL,
-    FechaHoraInicio  DATETIME2(0) NOT NULL,
-    FechaHoraFin     DATETIME2(0) NOT NULL,
-    CupoGlobal       INT NULL,
-    UsosActuales     INT NOT NULL CONSTRAINT DF_Promo_Usos DEFAULT (0),
-    Combinable       BIT NOT NULL CONSTRAINT DF_Promo_Comb DEFAULT (1),
-    RequiereCodigo   BIT NOT NULL CONSTRAINT DF_Promo_Codigo DEFAULT (0),
-    Prioridad        INT NOT NULL CONSTRAINT DF_Promo_Prio DEFAULT (100),
-    Activa           BIT NOT NULL CONSTRAINT DF_Promo_Activa DEFAULT (1),
-    CONSTRAINT FK_Promo_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT CK_Promo_Tipo CHECK (Tipo IN (
-        N'PORCENTAJE_PRODUCTO', N'MONTO_PRODUCTO', N'NX_M',
-        N'CUPON', N'HAPPY_HOUR', N'DELIVERY_GRATIS'
-    )),
-    CONSTRAINT CK_Promo_Fechas CHECK (FechaHoraFin > FechaHoraInicio)
+CREATE TABLE dbo.Promotions (
+    IdPromotion         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Promotions PRIMARY KEY,
+    Code                NVARCHAR(40)  NULL,
+    Name                NVARCHAR(150) NOT NULL,
+    Description         NVARCHAR(500) NULL,
+    /* PERCENT | FIXED_AMOUNT | FREE_DELIVERY */
+    PromoType           NVARCHAR(30)  NOT NULL,
+    DiscountPercent     DECIMAL(5,2)  NULL,
+    DiscountAmount      DECIMAL(10,2) NULL,
+    /* PRODUCT | CATEGORY | ORDER | DELIVERY */
+    Scope               NVARCHAR(20)  NOT NULL,
+    StartsAt            DATETIME2(0)  NOT NULL,
+    EndsAt              DATETIME2(0)  NOT NULL,
+    Priority            INT NOT NULL CONSTRAINT DF_Promotions_Priority DEFAULT (0),
+    IsStackable         BIT NOT NULL CONSTRAINT DF_Promotions_Stackable DEFAULT (0),
+    IsAutomatic         BIT NOT NULL CONSTRAINT DF_Promotions_Automatic DEFAULT (1),
+    MinOrderAmount      DECIMAL(10,2) NULL,
+    MaxDiscountAmount   DECIMAL(10,2) NULL,
+    IdBranch            INT NULL,  -- NULL = all branches
+    IsActive            BIT NOT NULL CONSTRAINT DF_Promotions_IsActive DEFAULT (1),
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_Promotions_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    IdCreatedByUser     INT NULL,
+    CONSTRAINT FK_Promotions_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_Promotions_CreatedBy FOREIGN KEY (IdCreatedByUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT CK_Promotions_Type CHECK (PromoType IN (N'PERCENT', N'FIXED_AMOUNT', N'FREE_DELIVERY')),
+    CONSTRAINT CK_Promotions_Scope CHECK (Scope IN (N'PRODUCT', N'CATEGORY', N'ORDER', N'DELIVERY'))
 );
 GO
 
-CREATE TABLE dbo.PromocionProductos (
-    IdPromocion INT NOT NULL,
-    IdProducto  INT NOT NULL,
-    CONSTRAINT PK_PromocionProductos PRIMARY KEY (IdPromocion, IdProducto),
-    CONSTRAINT FK_PP_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT FK_PP_Prod FOREIGN KEY (IdProducto) REFERENCES dbo.Productos(IdProducto)
+CREATE TABLE dbo.PromotionProducts (
+    IdPromotion INT NOT NULL,
+    IdProduct   INT NOT NULL,
+    CONSTRAINT PK_PromotionProducts PRIMARY KEY (IdPromotion, IdProduct),
+    CONSTRAINT FK_PromotionProducts_Promo FOREIGN KEY (IdPromotion) REFERENCES dbo.Promotions(IdPromotion),
+    CONSTRAINT FK_PromotionProducts_Product FOREIGN KEY (IdProduct) REFERENCES dbo.Products(IdProduct)
 );
 GO
 
-CREATE TABLE dbo.PromocionCategorias (
-    IdPromocion INT NOT NULL,
-    IdCategoria INT NOT NULL,
-    CONSTRAINT PK_PromocionCategorias PRIMARY KEY (IdPromocion, IdCategoria),
-    CONSTRAINT FK_PC_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT FK_PC_Cat FOREIGN KEY (IdCategoria) REFERENCES dbo.Categorias(IdCategoria)
+CREATE TABLE dbo.PromotionCategories (
+    IdPromotion INT NOT NULL,
+    IdCategory  INT NOT NULL,
+    CONSTRAINT PK_PromotionCategories PRIMARY KEY (IdPromotion, IdCategory),
+    CONSTRAINT FK_PromotionCategories_Promo FOREIGN KEY (IdPromotion) REFERENCES dbo.Promotions(IdPromotion),
+    CONSTRAINT FK_PromotionCategories_Category FOREIGN KEY (IdCategory) REFERENCES dbo.Categories(IdCategory)
 );
 GO
 
-CREATE TABLE dbo.PromocionExclusiones (
-    IdPromocion         INT NOT NULL,
-    IdPromocionExcluida INT NOT NULL,
-    CONSTRAINT PK_PromocionExclusiones PRIMARY KEY (IdPromocion, IdPromocionExcluida),
-    CONSTRAINT FK_PE_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT FK_PE_Excl FOREIGN KEY (IdPromocionExcluida) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT CK_PE_Diff CHECK (IdPromocion <> IdPromocionExcluida)
-);
-GO
-
-CREATE TABLE dbo.Cupones (
-    IdCupon           INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Cupones PRIMARY KEY,
-    IdPromocion       INT NOT NULL,
-    Codigo            NVARCHAR(40) NOT NULL,
-    UsoMaxGlobal      INT NULL,
-    UsoMaxPorCliente  INT NULL,
-    UsosActuales      INT NOT NULL CONSTRAINT DF_Cupon_Usos DEFAULT (0),
-    Activo            BIT NOT NULL CONSTRAINT DF_Cupon_Activo DEFAULT (1),
-    CONSTRAINT UQ_Cupones_Codigo UNIQUE (Codigo),
-    CONSTRAINT FK_Cupon_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion)
-);
-GO
-
-CREATE TABLE dbo.PromocionAuditoria (
-    IdAuditoria   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PromocionAuditoria PRIMARY KEY,
-    IdPromocion   INT NOT NULL,
-    IdUsuario     INT NOT NULL,
-    Campo         NVARCHAR(100) NOT NULL,
-    ValorAnterior NVARCHAR(500) NULL,
-    ValorNuevo    NVARCHAR(500) NULL,
-    Fecha         DATETIME2(0) NOT NULL CONSTRAINT DF_PromoAud_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_PromoAud_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT FK_PromoAud_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
-);
-GO
-
-/* ---------------------------------------------------------
-   7. Pedidos
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.EstadosPedido (
-    IdEstadoPedido INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_EstadosPedido PRIMARY KEY,
-    Nombre         NVARCHAR(30) NOT NULL,
-    Descripcion    NVARCHAR(200) NULL,
-    CONSTRAINT UQ_EstadosPedido_Nombre UNIQUE (Nombre)
-);
-GO
-
-CREATE TABLE dbo.MetodosPago (
-    IdMetodoPago INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_MetodosPago PRIMARY KEY,
-    Nombre       NVARCHAR(50) NOT NULL,
-    Activo       BIT NOT NULL CONSTRAINT DF_MetodosPago_Activo DEFAULT (1),
-    CONSTRAINT UQ_MetodosPago_Nombre UNIQUE (Nombre)
-);
-GO
-
-CREATE TABLE dbo.Pedidos (
-    IdPedido         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Pedidos PRIMARY KEY,
-    IdCliente        INT NOT NULL,
-    IdDireccion      INT NOT NULL,
-    IdSede           INT NOT NULL,
-    IdEstadoPedido   INT NOT NULL,
-    FechaPedido      DATETIME2(0) NOT NULL CONSTRAINT DF_Pedidos_Fecha DEFAULT (SYSUTCDATETIME()),
-    Subtotal         DECIMAL(10,2) NOT NULL,
-    DescuentoTotal   DECIMAL(10,2) NOT NULL CONSTRAINT DF_Pedidos_Desc DEFAULT (0),
-    CostoDelivery    DECIMAL(10,2) NOT NULL CONSTRAINT DF_Pedidos_Del DEFAULT (0),
-    Total            DECIMAL(10,2) NOT NULL,
-    DistanciaKm      DECIMAL(8,2) NULL,
-    Observaciones    NVARCHAR(500) NULL,
-    CodigoCupon      NVARCHAR(40) NULL,
-    CONSTRAINT FK_Pedidos_Cliente FOREIGN KEY (IdCliente) REFERENCES dbo.Clientes(IdCliente),
-    CONSTRAINT FK_Pedidos_Direccion FOREIGN KEY (IdDireccion) REFERENCES dbo.DireccionesCliente(IdDireccion),
-    CONSTRAINT FK_Pedidos_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT FK_Pedidos_Estado FOREIGN KEY (IdEstadoPedido) REFERENCES dbo.EstadosPedido(IdEstadoPedido),
-    CONSTRAINT CK_Pedidos_Montos CHECK (
-        Subtotal >= 0 AND DescuentoTotal >= 0 AND CostoDelivery >= 0 AND Total >= 0
+CREATE TABLE dbo.PromotionExclusions (
+    IdPromotionExclusion INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PromotionExclusions PRIMARY KEY,
+    IdPromotion          INT NOT NULL,
+    IdProduct            INT NULL,
+    IdCategory           INT NULL,
+    CONSTRAINT FK_PromotionExclusions_Promo FOREIGN KEY (IdPromotion) REFERENCES dbo.Promotions(IdPromotion),
+    CONSTRAINT FK_PromotionExclusions_Product FOREIGN KEY (IdProduct) REFERENCES dbo.Products(IdProduct),
+    CONSTRAINT FK_PromotionExclusions_Category FOREIGN KEY (IdCategory) REFERENCES dbo.Categories(IdCategory),
+    CONSTRAINT CK_PromotionExclusions_Target CHECK (
+        (IdProduct IS NOT NULL AND IdCategory IS NULL)
+        OR (IdProduct IS NULL AND IdCategory IS NOT NULL)
     )
 );
 GO
 
-CREATE INDEX IX_Pedidos_Cliente_Fecha ON dbo.Pedidos(IdCliente, FechaPedido DESC);
-CREATE INDEX IX_Pedidos_Sede_Estado ON dbo.Pedidos(IdSede, IdEstadoPedido, FechaPedido DESC);
-GO
-
-CREATE TABLE dbo.DetallePedidos (
-    IdDetallePedido     INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DetallePedidos PRIMARY KEY,
-    IdPedido            INT NOT NULL,
-    IdProducto          INT NOT NULL,
-    IdMenuDiaItem       INT NULL,
-    Cantidad            INT NOT NULL,
-    PrecioLista         DECIMAL(10,2) NOT NULL,
-    PrecioUnitarioFinal DECIMAL(10,2) NOT NULL,
-    DescuentoUnitario   DECIMAL(10,2) NOT NULL CONSTRAINT DF_Det_Desc DEFAULT (0),
-    IdPromocion         INT NULL,
-    Subtotal            DECIMAL(10,2) NOT NULL,
-    CONSTRAINT FK_Det_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_Det_Producto FOREIGN KEY (IdProducto) REFERENCES dbo.Productos(IdProducto),
-    CONSTRAINT FK_Det_MenuItem FOREIGN KEY (IdMenuDiaItem) REFERENCES dbo.MenuDiaItems(IdMenuDiaItem),
-    CONSTRAINT FK_Det_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT CK_Det_Cantidad CHECK (Cantidad > 0)
+CREATE TABLE dbo.PromotionAuditLog (
+    IdPromotionAudit    BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PromotionAuditLog PRIMARY KEY,
+    IdPromotion         INT NOT NULL,
+    IdUser              INT NULL,
+    Action              NVARCHAR(40) NOT NULL,  -- CREATED | UPDATED | ACTIVATED | DEACTIVATED
+    Detail              NVARCHAR(MAX) NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_PromotionAudit_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_PromotionAudit_Promo FOREIGN KEY (IdPromotion) REFERENCES dbo.Promotions(IdPromotion),
+    CONSTRAINT FK_PromotionAudit_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
 );
 GO
 
-CREATE TABLE dbo.PedidoDescuentos (
-    IdPedidoDescuento INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PedidoDescuentos PRIMARY KEY,
-    IdPedido          INT NOT NULL,
-    Tipo              NVARCHAR(30) NOT NULL,
-    IdPromocion       INT NULL,
-    IdCupon           INT NULL,
-    Monto             DECIMAL(10,2) NOT NULL,
-    Descripcion       NVARCHAR(200) NULL,
-    CONSTRAINT FK_PedDesc_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_PedDesc_Promo FOREIGN KEY (IdPromocion) REFERENCES dbo.Promociones(IdPromocion),
-    CONSTRAINT FK_PedDesc_Cupon FOREIGN KEY (IdCupon) REFERENCES dbo.Cupones(IdCupon),
-    CONSTRAINT CK_PedDesc_Monto CHECK (Monto >= 0)
+CREATE TABLE dbo.Coupons (
+    IdCoupon            INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Coupons PRIMARY KEY,
+    Code                NVARCHAR(40) NOT NULL,
+    Description         NVARCHAR(300) NULL,
+    DiscountType        NVARCHAR(20) NOT NULL, -- PERCENT | FIXED
+    DiscountValue       DECIMAL(10,2) NOT NULL,
+    MinOrderAmount      DECIMAL(10,2) NULL,
+    MaxUses             INT NULL,
+    UsedCount           INT NOT NULL CONSTRAINT DF_Coupons_Used DEFAULT (0),
+    StartsAt            DATETIME2(0) NOT NULL,
+    EndsAt              DATETIME2(0) NOT NULL,
+    IsActive            BIT NOT NULL CONSTRAINT DF_Coupons_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Coupons_Code UNIQUE (Code),
+    CONSTRAINT CK_Coupons_Type CHECK (DiscountType IN (N'PERCENT', N'FIXED'))
 );
 GO
 
-CREATE TABLE dbo.CuponUsos (
-    IdCuponUso INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CuponUsos PRIMARY KEY,
-    IdCupon    INT NOT NULL,
-    IdCliente  INT NOT NULL,
-    IdPedido   INT NOT NULL,
-    Fecha      DATETIME2(0) NOT NULL CONSTRAINT DF_CuponUso_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_CuponUso_Cupon FOREIGN KEY (IdCupon) REFERENCES dbo.Cupones(IdCupon),
-    CONSTRAINT FK_CuponUso_Cliente FOREIGN KEY (IdCliente) REFERENCES dbo.Clientes(IdCliente),
-    CONSTRAINT FK_CuponUso_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido)
+CREATE TABLE dbo.CouponUsages (
+    IdCouponUsage   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CouponUsages PRIMARY KEY,
+    IdCoupon        INT NOT NULL,
+    IdUser          INT NOT NULL,
+    IdOrder         INT NULL,
+    UsedAt          DATETIME2(0) NOT NULL CONSTRAINT DF_CouponUsages_UsedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_CouponUsages_Coupon FOREIGN KEY (IdCoupon) REFERENCES dbo.Coupons(IdCoupon),
+    CONSTRAINT FK_CouponUsages_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
 );
 GO
 
-CREATE TABLE dbo.Pagos (
-    IdPago             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Pagos PRIMARY KEY,
-    IdPedido           INT NOT NULL,
-    IdMetodoPago       INT NOT NULL,
-    Monto              DECIMAL(10,2) NOT NULL,
-    Estado             NVARCHAR(20) NOT NULL CONSTRAINT DF_Pagos_Estado DEFAULT (N'PENDIENTE'),
-    FechaRegistro      DATETIME2(0) NOT NULL CONSTRAINT DF_Pagos_Fecha DEFAULT (SYSUTCDATETIME()),
-    ReferenciaExterna  NVARCHAR(100) NULL,
-    CONSTRAINT FK_Pagos_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_Pagos_Metodo FOREIGN KEY (IdMetodoPago) REFERENCES dbo.MetodosPago(IdMetodoPago),
-    CONSTRAINT CK_Pagos_Estado CHECK (Estado IN (N'PENDIENTE', N'PAGADO', N'FALLIDO', N'REEMBOLSADO'))
+/* =========================================================
+   7. Orders
+   ========================================================= */
+
+CREATE TABLE dbo.OrderStatuses (
+    IdOrderStatus   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderStatuses PRIMARY KEY,
+    Code            NVARCHAR(40) NOT NULL,
+    Name            NVARCHAR(80) NOT NULL,
+    SortOrder       INT NOT NULL CONSTRAINT DF_OrderStatuses_Sort DEFAULT (0),
+    IsActive        BIT NOT NULL CONSTRAINT DF_OrderStatuses_IsActive DEFAULT (1),
+    CONSTRAINT UQ_OrderStatuses_Code UNIQUE (Code)
 );
 GO
 
-CREATE TABLE dbo.HistorialPedidos (
-    IdHistorial    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_HistorialPedidos PRIMARY KEY,
-    IdPedido       INT NOT NULL,
-    IdEstadoPedido INT NOT NULL,
-    IdUsuario      INT NULL,
-    Observacion    NVARCHAR(400) NULL,
-    FechaCambio    DATETIME2(0) NOT NULL CONSTRAINT DF_Hist_Fecha DEFAULT (SYSUTCDATETIME()),
-    CONSTRAINT FK_Hist_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_Hist_Estado FOREIGN KEY (IdEstadoPedido) REFERENCES dbo.EstadosPedido(IdEstadoPedido),
-    CONSTRAINT FK_Hist_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario)
+CREATE TABLE dbo.Orders (
+    IdOrder             INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Orders PRIMARY KEY,
+    IdCustomer          INT NOT NULL,
+    IdBranch            INT NOT NULL,
+    IdAddress           INT NOT NULL,
+    IdOrderStatus       INT NOT NULL,
+    OrderedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_Orders_OrderedAt DEFAULT (SYSUTCDATETIME()),
+    Subtotal            DECIMAL(10,2) NOT NULL CONSTRAINT DF_Orders_Subtotal DEFAULT (0),
+    DeliveryFee         DECIMAL(10,2) NOT NULL CONSTRAINT DF_Orders_Delivery DEFAULT (0),
+    Discount            DECIMAL(10,2) NOT NULL CONSTRAINT DF_Orders_Discount DEFAULT (0),
+    Total               DECIMAL(10,2) NOT NULL CONSTRAINT DF_Orders_Total DEFAULT (0),
+    Notes               NVARCHAR(500) NULL,
+    CouponCode          NVARCHAR(40) NULL,
+    CONSTRAINT FK_Orders_Customer FOREIGN KEY (IdCustomer) REFERENCES dbo.Customers(IdCustomer),
+    CONSTRAINT FK_Orders_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_Orders_Address FOREIGN KEY (IdAddress) REFERENCES dbo.CustomerAddresses(IdAddress),
+    CONSTRAINT FK_Orders_Status FOREIGN KEY (IdOrderStatus) REFERENCES dbo.OrderStatuses(IdOrderStatus),
+    CONSTRAINT CK_Orders_Money CHECK (Subtotal >= 0 AND DeliveryFee >= 0 AND Discount >= 0 AND Total >= 0)
 );
 GO
 
-CREATE TABLE dbo.ReservasStockPedido (
-    IdReserva  INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_ReservasStockPedido PRIMARY KEY,
-    IdPedido   INT NOT NULL,
-    IdSede     INT NOT NULL,
-    IdInsumo   INT NOT NULL,
-    Cantidad   DECIMAL(12,4) NOT NULL,
-    Estado     NVARCHAR(20) NOT NULL CONSTRAINT DF_Reserva_Estado DEFAULT (N'RESERVADA'),
-    CONSTRAINT FK_Reserva_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_Reserva_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT FK_Reserva_Insumo FOREIGN KEY (IdInsumo) REFERENCES dbo.Insumos(IdInsumo),
-    CONSTRAINT CK_Reserva_Estado CHECK (Estado IN (N'RESERVADA', N'CONSUMIDA', N'LIBERADA')),
-    CONSTRAINT CK_Reserva_Cant CHECK (Cantidad > 0)
+CREATE TABLE dbo.OrderItems (
+    IdOrderItem         INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderItems PRIMARY KEY,
+    IdOrder             INT NOT NULL,
+    IdProduct           INT NOT NULL,
+    IdDailyMenuItem     INT NULL,
+    ProductNameSnapshot NVARCHAR(150) NOT NULL,
+    UnitPrice           DECIMAL(10,2) NOT NULL,
+    Quantity            INT NOT NULL,
+    LineDiscount        DECIMAL(10,2) NOT NULL CONSTRAINT DF_OrderItems_Discount DEFAULT (0),
+    LineTotal           DECIMAL(10,2) NOT NULL,
+    Notes               NVARCHAR(300) NULL,
+    CONSTRAINT FK_OrderItems_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_OrderItems_Product FOREIGN KEY (IdProduct) REFERENCES dbo.Products(IdProduct),
+    CONSTRAINT FK_OrderItems_DailyMenuItem FOREIGN KEY (IdDailyMenuItem) REFERENCES dbo.DailyMenuItems(IdDailyMenuItem),
+    CONSTRAINT CK_OrderItems_Quantity CHECK (Quantity > 0)
 );
 GO
 
-/* FK diferida de movimientos → pedidos */
-ALTER TABLE dbo.MovimientosStock
-    ADD CONSTRAINT FK_MovStock_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido);
-GO
-
-/* ---------------------------------------------------------
-   8. Repartidores y entregas
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.Repartidores (
-    IdRepartidor INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Repartidores PRIMARY KEY,
-    IdUsuario    INT NOT NULL,
-    IdSede       INT NOT NULL,
-    Telefono     NVARCHAR(30) NULL,
-    Vehiculo     NVARCHAR(50) NULL,
-    Estado       NVARCHAR(20) NOT NULL CONSTRAINT DF_Rep_Estado DEFAULT (N'OFFLINE'),
-    Activo       BIT NOT NULL CONSTRAINT DF_Rep_Activo DEFAULT (1),
-    UltimaLat    DECIMAL(10,7) NULL,
-    UltimaLng    DECIMAL(10,7) NULL,
-    CONSTRAINT UQ_Repartidores_Usuario UNIQUE (IdUsuario),
-    CONSTRAINT FK_Rep_Usuario FOREIGN KEY (IdUsuario) REFERENCES dbo.Usuarios(IdUsuario),
-    CONSTRAINT FK_Rep_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT CK_Rep_Estado CHECK (Estado IN (N'OFFLINE', N'DISPONIBLE', N'EN_ENTREGA'))
+CREATE TABLE dbo.OrderDiscounts (
+    IdOrderDiscount     INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderDiscounts PRIMARY KEY,
+    IdOrder             INT NOT NULL,
+    /* PROMOTION | COUPON | MANUAL */
+    SourceType          NVARCHAR(20) NOT NULL,
+    IdPromotion         INT NULL,
+    IdCoupon            INT NULL,
+    CodeSnapshot        NVARCHAR(40) NULL,
+    NameSnapshot        NVARCHAR(150) NOT NULL,
+    DiscountAmount      DECIMAL(10,2) NOT NULL,
+    CONSTRAINT FK_OrderDiscounts_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_OrderDiscounts_Promotion FOREIGN KEY (IdPromotion) REFERENCES dbo.Promotions(IdPromotion),
+    CONSTRAINT FK_OrderDiscounts_Coupon FOREIGN KEY (IdCoupon) REFERENCES dbo.Coupons(IdCoupon),
+    CONSTRAINT CK_OrderDiscounts_Source CHECK (SourceType IN (N'PROMOTION', N'COUPON', N'MANUAL')),
+    CONSTRAINT CK_OrderDiscounts_Amount CHECK (DiscountAmount >= 0)
 );
 GO
 
-CREATE TABLE dbo.Entregas (
-    IdEntrega        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Entregas PRIMARY KEY,
-    IdPedido         INT NOT NULL,
-    IdRepartidor     INT NULL,
-    Estado           NVARCHAR(30) NOT NULL CONSTRAINT DF_Entrega_Estado DEFAULT (N'PENDIENTE_ASIGNACION'),
-    FechaAsignacion  DATETIME2(0) NULL,
-    FechaRecojo      DATETIME2(0) NULL,
-    FechaEntrega     DATETIME2(0) NULL,
-    Observacion      NVARCHAR(400) NULL,
-    CONSTRAINT UQ_Entregas_Pedido UNIQUE (IdPedido),
-    CONSTRAINT FK_Entrega_Pedido FOREIGN KEY (IdPedido) REFERENCES dbo.Pedidos(IdPedido),
-    CONSTRAINT FK_Entrega_Repartidor FOREIGN KEY (IdRepartidor) REFERENCES dbo.Repartidores(IdRepartidor),
-    CONSTRAINT CK_Entrega_Estado CHECK (Estado IN (
-        N'PENDIENTE_ASIGNACION', N'ASIGNADA', N'EN_CAMINO', N'ENTREGADA', N'FALLIDA'
+CREATE TABLE dbo.OrderHistory (
+    IdOrderHistory  INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderHistory PRIMARY KEY,
+    IdOrder         INT NOT NULL,
+    IdOrderStatus   INT NOT NULL,
+    IdUser          INT NULL,
+    Notes           NVARCHAR(300) NULL,
+    CreatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_OrderHistory_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_OrderHistory_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_OrderHistory_Status FOREIGN KEY (IdOrderStatus) REFERENCES dbo.OrderStatuses(IdOrderStatus),
+    CONSTRAINT FK_OrderHistory_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
+);
+GO
+
+CREATE TABLE dbo.OrderStockReservations (
+    IdReservation       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderStockReservations PRIMARY KEY,
+    IdOrder             INT NOT NULL,
+    IdBranch            INT NOT NULL,
+    IdIngredient        INT NOT NULL,
+    Quantity            DECIMAL(12,4) NOT NULL,
+    Status              NVARCHAR(20) NOT NULL, -- RESERVED | CONSUMED | RELEASED
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_OrderStockRes_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_OrderStockRes_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_OrderStockRes_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_OrderStockRes_Ingredient FOREIGN KEY (IdIngredient) REFERENCES dbo.Ingredients(IdIngredient),
+    CONSTRAINT CK_OrderStockRes_Status CHECK (Status IN (N'RESERVED', N'CONSUMED', N'RELEASED')),
+    CONSTRAINT CK_OrderStockRes_Qty CHECK (Quantity > 0)
+);
+GO
+
+ALTER TABLE dbo.StockMovements
+    ADD CONSTRAINT FK_StockMovements_Order
+    FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder);
+GO
+
+ALTER TABLE dbo.CouponUsages
+    ADD CONSTRAINT FK_CouponUsages_Order
+    FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder);
+GO
+
+CREATE TABLE dbo.PaymentMethods (
+    IdPaymentMethod INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PaymentMethods PRIMARY KEY,
+    Code            NVARCHAR(40) NOT NULL,  -- CASH | CARD | YAPE | PLIN | TRANSFER
+    Name            NVARCHAR(80) NOT NULL,
+    IsOnline        BIT NOT NULL CONSTRAINT DF_PaymentMethods_Online DEFAULT (0),
+    IsActive        BIT NOT NULL CONSTRAINT DF_PaymentMethods_IsActive DEFAULT (1),
+    SortOrder       INT NOT NULL CONSTRAINT DF_PaymentMethods_Sort DEFAULT (0),
+    CONSTRAINT UQ_PaymentMethods_Code UNIQUE (Code)
+);
+GO
+
+CREATE TABLE dbo.Payments (
+    IdPayment           INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Payments PRIMARY KEY,
+    IdOrder             INT NOT NULL,
+    IdPaymentMethod     INT NOT NULL,
+    Amount              DECIMAL(10,2) NOT NULL,
+    /* PENDING | AUTHORIZED | PAID | FAILED | REFUNDED */
+    Status              NVARCHAR(20) NOT NULL,
+    ExternalReference   NVARCHAR(120) NULL,
+    PaidAt              DATETIME2(0) NULL,
+    Notes               NVARCHAR(300) NULL,
+    IdRegisteredByUser  INT NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_Payments_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_Payments_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_Payments_Method FOREIGN KEY (IdPaymentMethod) REFERENCES dbo.PaymentMethods(IdPaymentMethod),
+    CONSTRAINT FK_Payments_User FOREIGN KEY (IdRegisteredByUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT CK_Payments_Status CHECK (Status IN (
+        N'PENDING', N'AUTHORIZED', N'PAID', N'FAILED', N'REFUNDED'
+    )),
+    CONSTRAINT CK_Payments_Amount CHECK (Amount > 0)
+);
+GO
+
+CREATE INDEX IX_Payments_Order ON dbo.Payments(IdOrder);
+GO
+
+CREATE TABLE dbo.DeliveryTariffs (
+    IdDeliveryTariff    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_DeliveryTariffs PRIMARY KEY,
+    IdBranch            INT NOT NULL,
+    Name                NVARCHAR(100) NOT NULL,
+    /* DISTANCE_KM | DISTRICT */
+    RuleType            NVARCHAR(20) NOT NULL,
+    MinDistanceKm       DECIMAL(8,2) NULL,
+    MaxDistanceKm       DECIMAL(8,2) NULL,
+    IdDistrict          CHAR(6) NULL,
+    Fee                 DECIMAL(10,2) NOT NULL,
+    IsActive            BIT NOT NULL CONSTRAINT DF_DeliveryTariffs_IsActive DEFAULT (1),
+    SortOrder           INT NOT NULL CONSTRAINT DF_DeliveryTariffs_Sort DEFAULT (0),
+    CONSTRAINT FK_DeliveryTariffs_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT FK_DeliveryTariffs_District FOREIGN KEY (IdDistrict) REFERENCES dbo.GeoDistricts(IdDistrict),
+    CONSTRAINT CK_DeliveryTariffs_Rule CHECK (RuleType IN (N'DISTANCE_KM', N'DISTRICT')),
+    CONSTRAINT CK_DeliveryTariffs_Fee CHECK (Fee >= 0)
+);
+GO
+
+CREATE INDEX IX_DeliveryTariffs_Branch ON dbo.DeliveryTariffs(IdBranch, IsActive);
+GO
+
+/* =========================================================
+   8. Kitchen staff, couriers, deliveries
+   ========================================================= */
+
+CREATE TABLE dbo.KitchenStaff (
+    IdKitchenStaff  INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_KitchenStaff PRIMARY KEY,
+    IdUser          INT NOT NULL,
+    IdBranch        INT NOT NULL,
+    JobTitle        NVARCHAR(50) NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_KitchenStaff_IsActive DEFAULT (1),
+    AssignedAt      DATETIME2(0) NOT NULL CONSTRAINT DF_KitchenStaff_AssignedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT UQ_KitchenStaff_User UNIQUE (IdUser),
+    CONSTRAINT FK_KitchenStaff_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT FK_KitchenStaff_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch)
+);
+GO
+
+CREATE TABLE dbo.Couriers (
+    IdCourier       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Couriers PRIMARY KEY,
+    IdUser          INT NOT NULL,
+    IdBranch        INT NOT NULL,
+    Phone           NVARCHAR(30) NULL,
+    Vehicle         NVARCHAR(50) NULL,
+    Status          NVARCHAR(20) NOT NULL, -- OFFLINE | AVAILABLE | ON_DELIVERY
+    IsActive        BIT NOT NULL CONSTRAINT DF_Couriers_IsActive DEFAULT (1),
+    LastLat         DECIMAL(10,7) NULL,
+    LastLng         DECIMAL(10,7) NULL,
+    CONSTRAINT UQ_Couriers_User UNIQUE (IdUser),
+    CONSTRAINT FK_Couriers_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT FK_Couriers_Branch FOREIGN KEY (IdBranch) REFERENCES dbo.Branches(IdBranch),
+    CONSTRAINT CK_Couriers_Status CHECK (Status IN (N'OFFLINE', N'AVAILABLE', N'ON_DELIVERY'))
+);
+GO
+
+CREATE TABLE dbo.Deliveries (
+    IdDelivery      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Deliveries PRIMARY KEY,
+    IdOrder         INT NOT NULL,
+    IdCourier       INT NULL,
+    Status          NVARCHAR(30) NOT NULL, -- PENDING | ASSIGNED | ON_ROUTE | DELIVERED | FAILED
+    AssignedAt      DATETIME2(0) NULL,
+    PickedUpAt      DATETIME2(0) NULL,
+    DeliveredAt     DATETIME2(0) NULL,
+    Notes           NVARCHAR(300) NULL,
+    CONSTRAINT UQ_Deliveries_Order UNIQUE (IdOrder),
+    CONSTRAINT FK_Deliveries_Order FOREIGN KEY (IdOrder) REFERENCES dbo.Orders(IdOrder),
+    CONSTRAINT FK_Deliveries_Courier FOREIGN KEY (IdCourier) REFERENCES dbo.Couriers(IdCourier),
+    CONSTRAINT CK_Deliveries_Status CHECK (Status IN (
+        N'PENDING', N'ASSIGNED', N'ON_ROUTE', N'DELIVERED', N'FAILED'
     ))
 );
 GO
 
-CREATE INDEX IX_Entregas_Repartidor_Estado ON dbo.Entregas(IdRepartidor, Estado);
-GO
+/* =========================================================
+   9. ACL � permissions, groups, menus
+   ========================================================= */
 
-/* ---------------------------------------------------------
-   9. Config delivery por sede
-   --------------------------------------------------------- */
-
-CREATE TABLE dbo.ConfiguracionSede (
-    IdSede                     INT NOT NULL CONSTRAINT PK_ConfiguracionSede PRIMARY KEY,
-    DeliveryGratisDesdeMonto   DECIMAL(10,2) NULL,
-    DeliveryGratisHastaKm      DECIMAL(8,2)  NULL,
-    CostoDeliveryMinimo        DECIMAL(10,2) NULL,
-    PedidoMinimo               DECIMAL(10,2) NULL,
-    CONSTRAINT FK_Config_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede)
+CREATE TABLE dbo.Permissions (
+    IdPermission    INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_Permissions PRIMARY KEY,
+    Code            NVARCHAR(80) NOT NULL,
+    Module          NVARCHAR(80) NOT NULL,
+    Name            NVARCHAR(150) NOT NULL,  -- UI label key / English name
+    Description     NVARCHAR(300) NULL,
+    IsActive        BIT NOT NULL CONSTRAINT DF_Permissions_IsActive DEFAULT (1),
+    CONSTRAINT UQ_Permissions_Code UNIQUE (Code)
 );
 GO
 
-CREATE TABLE dbo.TarifasDelivery (
-    IdTarifa  INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_TarifasDelivery PRIMARY KEY,
-    IdSede    INT NOT NULL,
-    KmDesde   DECIMAL(8,2) NOT NULL,
-    KmHasta   DECIMAL(8,2) NOT NULL,
-    Costo     DECIMAL(10,2) NOT NULL,
-    CONSTRAINT FK_Tarifa_Sede FOREIGN KEY (IdSede) REFERENCES dbo.Sedes(IdSede),
-    CONSTRAINT CK_Tarifa_Rango CHECK (KmHasta > KmDesde),
-    CONSTRAINT CK_Tarifa_Costo CHECK (Costo >= 0)
+CREATE TABLE dbo.PermissionGroups (
+    IdPermissionGroup INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_PermissionGroups PRIMARY KEY,
+    Code              NVARCHAR(80) NOT NULL,
+    Name              NVARCHAR(150) NOT NULL,
+    Description       NVARCHAR(300) NULL,
+    IsActive          BIT NOT NULL CONSTRAINT DF_PermissionGroups_IsActive DEFAULT (1),
+    CONSTRAINT UQ_PermissionGroups_Code UNIQUE (Code)
 );
 GO
 
-/* ---------------------------------------------------------
-   10. Datos mínimos de catálogo (estados / métodos / roles)
-   --------------------------------------------------------- */
-
-INSERT INTO dbo.Roles (Nombre, Descripcion) VALUES
- (N'CLIENTE', N'Cliente final'),
- (N'ADMINISTRADOR', N'Administrador general'),
- (N'CHEF', N'Personal de cocina'),
- (N'REPARTIDOR', N'Repartidor'),
- (N'OPERACIONES', N'Menú, stock y promociones'),
- (N'SUPERVISOR', N'Supervisión y autorizaciones');
-GO
-
-INSERT INTO dbo.EstadosPedido (Nombre, Descripcion) VALUES
- (N'PENDIENTE', N'Pedido registrado'),
- (N'CONFIRMADO', N'Pedido confirmado'),
- (N'EN_PREPARACION', N'En cocina'),
- (N'LISTO', N'Listo para recojo'),
- (N'EN_CAMINO', N'En ruta de entrega'),
- (N'ENTREGADO', N'Entregado al cliente'),
- (N'CANCELADO', N'Cancelado');
-GO
-
-INSERT INTO dbo.MetodosPago (Nombre) VALUES
- (N'EFECTIVO'), (N'TARJETA'), (N'YAPE'), (N'PLIN'), (N'TRANSFERENCIA');
-GO
-
-INSERT INTO dbo.Regiones (Nombre, Descripcion) VALUES
- (N'COSTA', N'Gastronomía de la costa'),
- (N'SIERRA', N'Gastronomía de la sierra'),
- (N'SELVA', N'Gastronomía de la selva');
-GO
-
-INSERT INTO dbo.Categorias (Nombre) VALUES
- (N'ENTRADAS'), (N'PLATOS DE FONDO'), (N'POSTRES'), (N'BEBIDAS'), (N'COMBOS');
-GO
-
-
--- Departamento Lima
-IF NOT EXISTS (SELECT 1 FROM dbo.UbigeoDepartamentos WHERE IdDepartamento = '15')
-INSERT INTO dbo.UbigeoDepartamentos (IdDepartamento, Nombre)
-VALUES ('15', N'Lima');
-GO
-
--- Provincia Lima
-IF NOT EXISTS (SELECT 1 FROM dbo.UbigeoProvincias WHERE IdProvincia = '1501')
-INSERT INTO dbo.UbigeoProvincias (IdProvincia, IdDepartamento, Nombre)
-VALUES ('1501', '15', N'Lima');
-GO
-
--- Distritos de prueba (cobertura típica)
-IF NOT EXISTS (SELECT 1 FROM dbo.UbigeoDistritos WHERE IdDistrito = '150101')
-INSERT INTO dbo.UbigeoDistritos (IdDistrito, IdProvincia, Nombre, LatCentro, LngCentro) VALUES
-('150101', '1501', N'Lima',          -12.0464000, -77.0428000),
-('150122', '1501', N'Miraflores',    -12.1211000, -77.0297000),
-('150131', '1501', N'San Isidro',    -12.0972000, -77.0350000),
-('150140', '1501', N'Surco',         -12.1400000, -76.9920000),  -- Santiago de Surco
-('150130', '1501', N'San Borja',     -12.1070000, -76.9980000),
-('150113', '1501', N'Jesús María',   -12.0780000, -77.0480000),
-('150120', '1501', N'Magdalena',     -12.0920000, -77.0700000),
-('150108', '1501', N'Barranco',      -12.1440000, -77.0220000),
-('150114', '1501', N'La Molina',     -12.0780000, -76.9450000),
-('150132', '1501', N'San Miguel',    -12.0780000, -77.0930000);
-GO
-
-
-
-DECLARE @IdSede INT;
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Sedes WHERE Nombre = N'Cocina Miraflores')
-BEGIN
-    INSERT INTO dbo.Sedes (Nombre, Direccion, Lat, Lng, RadioCoberturaKm, Activa, Telefono)
-    VALUES (
-        N'Cocina Miraflores',
-        N'Av. Larco 600, Miraflores',
-        -12.1211000,
-        -77.0297000,
-        8.00,          -- 8 km de radio
-        1,
-        N'01-400-0000'
-    );
-END
-
-SELECT @IdSede = IdSede FROM dbo.Sedes WHERE Nombre = N'Cocina Miraflores';
-
--- Turnos globales de la sede
-IF NOT EXISTS (SELECT 1 FROM dbo.SedeTurnos WHERE IdSede = @IdSede)
-BEGIN
-    INSERT INTO dbo.SedeTurnos (IdSede, Turno, HoraInicio, HoraFin, Activo) VALUES
-    (@IdSede, N'DESAYUNO',  '07:00', '11:00', 1),
-    (@IdSede, N'ALMUERZO',  '11:00', '16:00', 1),
-    (@IdSede, N'CENA',      '16:00', '22:00', 1);
-END
-
--- Config delivery
-IF NOT EXISTS (SELECT 1 FROM dbo.ConfiguracionSede WHERE IdSede = @IdSede)
-BEGIN
-    INSERT INTO dbo.ConfiguracionSede (
-        IdSede,
-        DeliveryGratisDesdeMonto,
-        DeliveryGratisHastaKm,
-        CostoDeliveryMinimo,
-        PedidoMinimo
-    ) VALUES (
-        @IdSede,
-        60.00,   -- gratis desde S/ 60
-        2.00,    -- gratis hasta 2 km
-        5.00,    -- mínimo de delivery si cobra
-        15.00    -- pedido mínimo
-    );
-END
-
--- Tarifas por tramo (si distancia no es gratis)
-IF NOT EXISTS (SELECT 1 FROM dbo.TarifasDelivery WHERE IdSede = @IdSede)
-BEGIN
-    INSERT INTO dbo.TarifasDelivery (IdSede, KmDesde, KmHasta, Costo) VALUES
-    (@IdSede, 0.00,  2.00,  0.00),   -- cubierto por regla gratis km
-    (@IdSede, 2.00,  5.00,  6.00),
-    (@IdSede, 5.00,  8.00, 10.00),
-    (@IdSede, 8.00, 15.00, 15.00);
-END
-GO
-
-
-
-DECLARE @IdSede INT = (SELECT TOP 1 IdSede FROM dbo.Sedes WHERE Nombre = N'Cocina Miraflores');
-DECLARE @IdCat INT = (SELECT TOP 1 IdCategoria FROM dbo.Categorias WHERE Nombre = N'PLATOS DE FONDO');
-DECLARE @IdReg INT = (SELECT TOP 1 IdRegion FROM dbo.Regiones WHERE Nombre = N'COSTA');
-
--- Insumos
-IF NOT EXISTS (SELECT 1 FROM dbo.Insumos WHERE Nombre = N'Pescado blanco')
-INSERT INTO dbo.Insumos (Nombre, Unidad, StockIlimitado, StockMinimoAlerta, Activo)
-VALUES (N'Pescado blanco', N'kg', 0, 2.0000, 1);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Insumos WHERE Nombre = N'Limón')
-INSERT INTO dbo.Insumos (Nombre, Unidad, StockIlimitado, StockMinimoAlerta, Activo)
-VALUES (N'Limón', N'kg', 0, 1.0000, 1);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Insumos WHERE Nombre = N'Cebolla roja')
-INSERT INTO dbo.Insumos (Nombre, Unidad, StockIlimitado, StockMinimoAlerta, Activo)
-VALUES (N'Cebolla roja', N'kg', 0, 1.0000, 1);
-
-DECLARE @IdPescado INT = (SELECT IdInsumo FROM dbo.Insumos WHERE Nombre = N'Pescado blanco');
-DECLARE @IdLimon INT = (SELECT IdInsumo FROM dbo.Insumos WHERE Nombre = N'Limón');
-DECLARE @IdCebolla INT = (SELECT IdInsumo FROM dbo.Insumos WHERE Nombre = N'Cebolla roja');
-
--- Stock sede
-MERGE dbo.StockInsumos AS t
-USING (SELECT @IdSede AS IdSede, @IdPescado AS IdInsumo) s
-ON t.IdSede = s.IdSede AND t.IdInsumo = s.IdInsumo
-WHEN NOT MATCHED THEN
-  INSERT (IdSede, IdInsumo, CantidadDisponible, CantidadReservada, UltimoCosto, Version)
-  VALUES (@IdSede, @IdPescado, 20.0000, 0, 25.00, 0);
-
-MERGE dbo.StockInsumos AS t
-USING (SELECT @IdSede AS IdSede, @IdLimon AS IdInsumo) s
-ON t.IdSede = s.IdSede AND t.IdInsumo = s.IdInsumo
-WHEN NOT MATCHED THEN
-  INSERT (IdSede, IdInsumo, CantidadDisponible, CantidadReservada, UltimoCosto, Version)
-  VALUES (@IdSede, @IdLimon, 10.0000, 0, 3.50, 0);
-
-MERGE dbo.StockInsumos AS t
-USING (SELECT @IdSede AS IdSede, @IdCebolla AS IdInsumo) s
-ON t.IdSede = s.IdSede AND t.IdInsumo = s.IdInsumo
-WHEN NOT MATCHED THEN
-  INSERT (IdSede, IdInsumo, CantidadDisponible, CantidadReservada, UltimoCosto, Version)
-  VALUES (@IdSede, @IdCebolla, 8.0000, 0, 2.00, 0);
-
--- Producto
-IF NOT EXISTS (SELECT 1 FROM dbo.Productos WHERE Nombre = N'Ceviche clásico')
-INSERT INTO dbo.Productos (
-  IdCategoria, IdRegion, Nombre, Descripcion, PrecioBase,
-  ImagenUrl, TiempoPreparacionMin, StockIlimitado, Activo, FechaRegistro
-) VALUES (
-  @IdCat, @IdReg,
-  N'Ceviche clásico',
-  N'Pescado fresco, limón y cebolla morada',
-  32.00,
-  NULL, 20, 0, 1, SYSUTCDATETIME()
+CREATE TABLE dbo.PermissionGroupItems (
+    IdPermissionGroup INT NOT NULL,
+    IdPermission      INT NOT NULL,
+    CONSTRAINT PK_PermissionGroupItems PRIMARY KEY (IdPermissionGroup, IdPermission),
+    CONSTRAINT FK_PGI_Group FOREIGN KEY (IdPermissionGroup) REFERENCES dbo.PermissionGroups(IdPermissionGroup),
+    CONSTRAINT FK_PGI_Permission FOREIGN KEY (IdPermission) REFERENCES dbo.Permissions(IdPermission)
 );
+GO
 
-DECLARE @IdProd INT = (SELECT IdProducto FROM dbo.Productos WHERE Nombre = N'Ceviche clásico');
-
--- Receta (por 1 plato)
-IF NOT EXISTS (SELECT 1 FROM dbo.Recetas WHERE IdProducto = @IdProd)
-BEGIN
-  INSERT INTO dbo.Recetas (IdProducto, Version, Activa) VALUES (@IdProd, 1, 1);
-  DECLARE @IdReceta INT = SCOPE_IDENTITY();
-  INSERT INTO dbo.RecetaDetalles (IdReceta, IdInsumo, Cantidad) VALUES
-    (@IdReceta, @IdPescado, 0.2500),
-    (@IdReceta, @IdLimon,   0.1000),
-    (@IdReceta, @IdCebolla, 0.0500);
-END
-
--- Menú de hoy
-DECLARE @Hoy DATE = CAST(GETDATE() AS DATE);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.MenusDia WHERE IdSede = @IdSede AND Fecha = @Hoy)
-INSERT INTO dbo.MenusDia (IdSede, Fecha, Estado, FechaPublicacion)
-VALUES (@IdSede, @Hoy, N'PUBLICADO', SYSUTCDATETIME());
-
-DECLARE @IdMenu INT = (SELECT IdMenuDia FROM dbo.MenusDia WHERE IdSede = @IdSede AND Fecha = @Hoy);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.MenuDiaItems WHERE IdMenuDia = @IdMenu AND IdProducto = @IdProd)
-INSERT INTO dbo.MenuDiaItems (IdMenuDia, IdProducto, Disponible, PrecioDia, CupoMaximo, CantidadVendida)
-VALUES (@IdMenu, @IdProd, 1, 32.00, 50, 0);
-
-DECLARE @IdMenuItem INT = (
-  SELECT IdMenuDiaItem FROM dbo.MenuDiaItems WHERE IdMenuDia = @IdMenu AND IdProducto = @IdProd
+CREATE TABLE dbo.RolePermissionGroups (
+    IdRole            INT NOT NULL,
+    IdPermissionGroup INT NOT NULL,
+    CONSTRAINT PK_RolePermissionGroups PRIMARY KEY (IdRole, IdPermissionGroup),
+    CONSTRAINT FK_RPG_Role FOREIGN KEY (IdRole) REFERENCES dbo.Roles(IdRole),
+    CONSTRAINT FK_RPG_Group FOREIGN KEY (IdPermissionGroup) REFERENCES dbo.PermissionGroups(IdPermissionGroup)
 );
+GO
 
--- Turnos del ítem (todos los de la sede)
-INSERT INTO dbo.MenuDiaItemTurnos (IdMenuDiaItem, IdSedeTurno)
-SELECT @IdMenuItem, st.IdSedeTurno
-FROM dbo.SedeTurnos st
-WHERE st.IdSede = @IdSede
-  AND NOT EXISTS (
-    SELECT 1 FROM dbo.MenuDiaItemTurnos x
-    WHERE x.IdMenuDiaItem = @IdMenuItem AND x.IdSedeTurno = st.IdSedeTurno
-  );
+CREATE TABLE dbo.RolePermissions (
+    IdRole       INT NOT NULL,
+    IdPermission INT NOT NULL,
+    Effect       NVARCHAR(10) NOT NULL, -- ALLOW | DENY
+    CONSTRAINT PK_RolePermissions PRIMARY KEY (IdRole, IdPermission),
+    CONSTRAINT FK_RP_Role FOREIGN KEY (IdRole) REFERENCES dbo.Roles(IdRole),
+    CONSTRAINT FK_RP_Permission FOREIGN KEY (IdPermission) REFERENCES dbo.Permissions(IdPermission),
+    CONSTRAINT CK_RolePermissions_Effect CHECK (Effect IN (N'ALLOW', N'DENY'))
+);
+GO
 
-SELECT @IdSede AS IdSede, @IdProd AS IdProducto, @IdMenuItem AS IdMenuDiaItem, @Hoy AS FechaMenu;
+CREATE TABLE dbo.UserPermissionConfigs (
+    IdUser          INT NOT NULL CONSTRAINT PK_UserPermissionConfigs PRIMARY KEY,
+    PermissionMode  NVARCHAR(20) NOT NULL, -- INHERIT | RESTRICT | CUSTOM
+    UpdatedAt       DATETIME2(0) NOT NULL CONSTRAINT DF_UPC_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_UPC_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT CK_UPC_Mode CHECK (PermissionMode IN (N'INHERIT', N'RESTRICT', N'CUSTOM'))
+);
+GO
+
+CREATE TABLE dbo.UserPermissionOverrides (
+    IdUser       INT NOT NULL,
+    IdPermission INT NOT NULL,
+    Effect       NVARCHAR(10) NOT NULL, -- ALLOW | DENY
+    CONSTRAINT PK_UserPermissionOverrides PRIMARY KEY (IdUser, IdPermission),
+    CONSTRAINT FK_UPO_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser),
+    CONSTRAINT FK_UPO_Permission FOREIGN KEY (IdPermission) REFERENCES dbo.Permissions(IdPermission),
+    CONSTRAINT CK_UPO_Effect CHECK (Effect IN (N'ALLOW', N'DENY'))
+);
+GO
+
+CREATE TABLE dbo.MenuItems (
+    IdMenuItem      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_MenuItems PRIMARY KEY,
+    Code            NVARCHAR(80) NOT NULL,
+    Label           NVARCHAR(120) NOT NULL,  -- default label; UI may translate to Spanish
+    Route           NVARCHAR(200) NOT NULL,
+    Icon            NVARCHAR(50)  NULL,
+    MenuGroup       NVARCHAR(80)  NULL,
+    Context         NVARCHAR(20)  NOT NULL, -- ADMIN | OPERATIONS | KITCHEN | COURIER | CUSTOMER
+    SortOrder       INT NOT NULL CONSTRAINT DF_MenuItems_Sort DEFAULT (0),
+    IsActive        BIT NOT NULL CONSTRAINT DF_MenuItems_IsActive DEFAULT (1),
+    CONSTRAINT UQ_MenuItems_Code UNIQUE (Code),
+    CONSTRAINT CK_MenuItems_Context CHECK (Context IN (
+        N'ADMIN', N'OPERATIONS', N'KITCHEN', N'COURIER', N'CUSTOMER'
+    ))
+);
+GO
+
+CREATE TABLE dbo.MenuItemPermissions (
+    IdMenuItem   INT NOT NULL,
+    IdPermission INT NOT NULL,
+    CONSTRAINT PK_MenuItemPermissions PRIMARY KEY (IdMenuItem, IdPermission),
+    CONSTRAINT FK_MIP_Menu FOREIGN KEY (IdMenuItem) REFERENCES dbo.MenuItems(IdMenuItem),
+    CONSTRAINT FK_MIP_Permission FOREIGN KEY (IdPermission) REFERENCES dbo.Permissions(IdPermission)
+);
+GO
+
+CREATE TABLE dbo.SecurityConfig (
+    IdSecurityConfig    INT NOT NULL CONSTRAINT PK_SecurityConfig PRIMARY KEY
+                        CONSTRAINT CK_SecurityConfig_Single CHECK (IdSecurityConfig = 1),
+    SecurityVersion     INT NOT NULL CONSTRAINT DF_SecurityConfig_Version DEFAULT (1),
+    UpdatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_SecurityConfig_UpdatedAt DEFAULT (SYSUTCDATETIME())
+);
+GO
+
+INSERT INTO dbo.SecurityConfig (IdSecurityConfig, SecurityVersion) VALUES (1, 1);
+GO
+
+CREATE TABLE dbo.SecurityAuditLog (
+    IdSecurityAudit     BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_SecurityAuditLog PRIMARY KEY,
+    IdUser              INT NULL,
+    Action              NVARCHAR(50) NOT NULL,
+    EntityType          NVARCHAR(50) NOT NULL,
+    EntityId            NVARCHAR(50) NULL,
+    Detail              NVARCHAR(MAX) NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_SecurityAuditLog_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_SecurityAuditLog_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
+);
+GO
+
+CREATE TABLE dbo.UserAccessLogs (
+    IdAccessLog         BIGINT IDENTITY(1,1) NOT NULL CONSTRAINT PK_UserAccessLogs PRIMARY KEY,
+    IdUser              INT NULL,
+    EmailAttempted      NVARCHAR(150) NULL,
+    EventType           NVARCHAR(30) NOT NULL,
+    IsSuccess           BIT NOT NULL CONSTRAINT DF_UserAccessLogs_Success DEFAULT (1),
+    Ip                  NVARCHAR(45) NULL,
+    UserAgent           NVARCHAR(500) NULL,
+    Browser             NVARCHAR(80) NULL,
+    OperatingSystem     NVARCHAR(80) NULL,
+    Device              NVARCHAR(40) NULL,
+    SessionId           NVARCHAR(100) NULL,
+    Detail              NVARCHAR(300) NULL,
+    CreatedAt           DATETIME2(0) NOT NULL CONSTRAINT DF_UserAccessLogs_CreatedAt DEFAULT (SYSUTCDATETIME()),
+    CONSTRAINT FK_UserAccessLogs_User FOREIGN KEY (IdUser) REFERENCES dbo.Users(IdUser)
+);
+GO
+
+CREATE INDEX IX_UserAccessLogs_User_Created ON dbo.UserAccessLogs(IdUser, CreatedAt DESC);
 GO
 
 
+CREATE INDEX IX_Orders_Customer ON dbo.Orders(IdCustomer, OrderedAt DESC);
+CREATE INDEX IX_Orders_Branch_Status ON dbo.Orders(IdBranch, IdOrderStatus);
+CREATE INDEX IX_Promotions_Active_Dates ON dbo.Promotions(IsActive, StartsAt, EndsAt);
+CREATE INDEX IX_DailyMenus_Branch_Date ON dbo.DailyMenus(IdBranch, MenuDate);
 
--- 20% en todos los productos (automática, sin código), 7 días
-INSERT INTO dbo.Promociones (
-  Nombre, Tipo, Valor, IdSede, FechaHoraInicio, FechaHoraFin,
-  Combinable, RequiereCodigo, Prioridad, Activa, UsosActuales
-) VALUES (
-  N'Promo costa 20%', N'PORCENTAJE_PRODUCTO', 20.00, NULL,
-  DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 30, SYSUTCDATETIME()),
-  1, 0, 10, 1, 0
-);
+/* =========================================================
+   10. Seed � roles & order statuses (minimum)
+   ========================================================= */
 
--- Cupón BIENVENIDO10 = 10% sobre subtotal
-INSERT INTO dbo.Promociones (
-  Nombre, Tipo, Valor, FechaHoraInicio, FechaHoraFin,
-  Combinable, RequiereCodigo, Prioridad, Activa, UsosActuales
-) VALUES (
-  N'Cupón bienvenida', N'CUPON', 10.00,
-  DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 90, SYSUTCDATETIME()),
-  1, 1, 50, 1, 0
-);
+INSERT INTO dbo.Roles (Name, Description) VALUES
+(N'ADMINISTRATOR', N'Full system access'),
+(N'MANAGER', N'Store / operations manager'),
+(N'OPERATIONS', N'Daily operations'),
+(N'WAREHOUSE', N'Stock and ingredients'),
+(N'CHEF', N'Kitchen staff'),
+(N'COURIER', N'Delivery staff'),
+(N'CUSTOMER_SERVICE', N'Customer support'),
+(N'CASHIER', N'Payments / POS'),
+(N'CUSTOMER', N'End customer');
+GO
 
-DECLARE @IdPromoCupon INT = SCOPE_IDENTITY();
+INSERT INTO dbo.OrderStatuses (Code, Name, SortOrder) VALUES
+(N'PENDING', N'Pending', 10),
+(N'CONFIRMED', N'Confirmed', 20),
+(N'IN_PREPARATION', N'In preparation', 30),
+(N'READY', N'Ready', 40),
+(N'OUT_FOR_DELIVERY', N'Out for delivery', 50),
+(N'DELIVERED', N'Delivered', 60),
+(N'CANCELLED', N'Cancelled', 90);
+GO
 
-INSERT INTO dbo.Cupones (IdPromocion, Codigo, UsoMaxGlobal, UsoMaxPorCliente, UsosActuales, Activo)
-VALUES (@IdPromoCupon, N'BIENVENIDO10', 1000, 1, 0, 1);
-
--- Delivery gratis desde S/ 50 (además de reglas de sede)
-INSERT INTO dbo.Promociones (
-  Nombre, Tipo, Valor, FechaHoraInicio, FechaHoraFin,
-  Combinable, RequiereCodigo, Prioridad, Activa, UsosActuales
-) VALUES (
-  N'Delivery gratis S/50', N'DELIVERY_GRATIS', 50.00,
-  DATEADD(day, -1, SYSUTCDATETIME()), DATEADD(day, 365, SYSUTCDATETIME()),
-  1, 0, 20, 1, 0
-);
-
-
+INSERT INTO dbo.PaymentMethods (Code, Name, IsOnline, SortOrder) VALUES
+(N'CASH', N'Cash', 0, 10),
+(N'CARD', N'Card', 1, 20),
+(N'YAPE', N'Yape', 1, 30),
+(N'PLIN', N'Plin', 1, 40),
+(N'TRANSFER', N'Bank transfer', 0, 50);
