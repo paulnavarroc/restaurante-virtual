@@ -8,6 +8,7 @@ import java.util.Set;
 
 public interface EffectivePermissionService {
     Set<String> resolvePermissionCodes(Integer userId);
+    Set<String> resolveRolePermissionCodes(Integer userId);
     List<MenuItemDto> resolveAllMenus(Integer userId);
     List<MenuItemDto> resolveMenuByContext(Integer userId, String context);
     SessionAuthorizationDto buildSessionAuthorization(Integer userId);

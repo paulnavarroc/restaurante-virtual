@@ -66,6 +66,14 @@ public class EffectivePermissionServiceImpl implements EffectivePermissionServic
         };
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Set<String> resolveRolePermissionCodes(Integer userId) {
+        User user = userRepository.findByIdWithRoles(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userId));
+        return resolveBaseFromRoles(user.getRoles());
+    }
+
     private Set<String> resolveBaseFromRoles(Set<Role> roles) {
         Set<String> allowGroups = new HashSet<>();
         Set<String> allowRole = new HashSet<>();

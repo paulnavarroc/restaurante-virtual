@@ -27,15 +27,25 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private ProductCardDto toCard(Product p) {
+        java.math.BigDecimal list = p.getBasePrice() != null
+                ? p.getBasePrice().setScale(2, java.math.RoundingMode.HALF_UP)
+                : java.math.BigDecimal.ZERO.setScale(2, java.math.RoundingMode.HALF_UP);
+
         return new ProductCardDto(
                 p.getId(),
+                null,
                 p.getName(),
                 p.getDescription(),
-                p.getBasePrice(),
+                list,
+                list,
+                false,
                 p.getImageUrl(),
                 p.getCategory() != null ? p.getCategory().getName() : null,
                 p.getRegion() != null ? p.getRegion().getName() : null,
-                p.getPrepTimeMinutes()
+                p.getPrepTimeMinutes(),
+                Boolean.TRUE.equals(p.getIsActive()),
+                false,
+                null
         );
     }
 }

@@ -2,6 +2,7 @@ package com.saboresperu.restaurante.controller;
 
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.boot.webmvc.error.ErrorController;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,12 +10,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
-public class AppErrorController implements org.springframework.boot.web.servlet.error.ErrorController {
+public class AppErrorController implements ErrorController {
 
     @RequestMapping("/error")
     public String handleError(HttpServletRequest request, Model model) {
         Object status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE);
-        int code = status != null ? Integer.parseInt(status.toString()) : 500;
+        int code = 500;
+        if (status != null) {
+            try {
+                code = Integer.parseInt(status.toString());
+            } catch (NumberFormatException ignored) {
+                code = 500;
+            }
+        }
 
         model.addAttribute("statusCode", code);
         model.addAttribute("titulo", "Error " + code);
@@ -29,6 +37,7 @@ public class AppErrorController implements org.springframework.boot.web.servlet.
             model.addAttribute("message", "No tienes permiso para ver este recurso.");
             return "error/403";
         }
+
         model.addAttribute("title", "Algo salió mal");
         model.addAttribute("message", "Ocurrió un error inesperado. Intenta de nuevo más tarde.");
         return "error/generic";

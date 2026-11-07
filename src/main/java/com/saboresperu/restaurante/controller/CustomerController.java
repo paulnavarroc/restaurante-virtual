@@ -41,8 +41,9 @@ public class CustomerController {
     @GetMapping("/orders/{id}")
     public String orderDetail(@PathVariable Integer id, Model model) {
         Customer customer = currentCustomer();
+        Order order = orderService.getByIdAndCustomerId(id, customer.getId());
         model.addAttribute("titulo", "Detalle de pedido");
-        model.addAttribute("order", orderService.getByIdAndCustomerId(id, customer.getId()));
+        model.addAttribute("order", order);
         model.addAttribute("payments", paymentRepository.findByOrderIdWithMethod(order.getId()));
         return "customer/order-detail";
     }

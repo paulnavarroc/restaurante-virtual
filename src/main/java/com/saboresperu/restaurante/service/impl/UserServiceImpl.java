@@ -37,6 +37,10 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Ya existe una cuenta con ese correo");
         }
 
+        if (!form.password().equals(form.passwordConfirm())) {
+            throw new IllegalArgumentException("Las contraseñas no coinciden");
+        }
+
         Role customerRole = roleRepository.findByName(ROLE_CUSTOMER)
                 .orElseThrow(() -> new IllegalStateException("Role CUSTOMER not found. Run SQL seeds."));
 
