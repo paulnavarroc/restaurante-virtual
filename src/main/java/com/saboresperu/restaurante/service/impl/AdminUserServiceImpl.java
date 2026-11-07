@@ -227,6 +227,22 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
 
         Set<Role> roles = resolveRoles(form.roleIds());
+
+        boolean willBeAdmin = roles.stream().anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
+        boolean wasAdmin = user.getRoles().stream().anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
+        if (wasAdmin && !willBeAdmin) {
+            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
+            if (remaining == 0) {
+                throw new IllegalArgumentException("Debe existir al menos un ADMINISTRADOR activo");
+            }
+        }
+        if (wasAdmin && !form.active()) {
+            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
+            if (remaining == 0) {
+                throw new IllegalArgumentException("No puedes desactivar el último ADMINISTRADOR");
+            }
+        }
+
         user.setRoles(roles);
         userRepository.save(user);
 
@@ -240,10 +256,24 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Override
     @Transactional
     public void setActive(Integer id, boolean active) {
-        User user = userRepository.findById(id)
+        User user = userRepository.findByIdWithRoles(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        boolean isAdmin = user.getRoles().stream()
+                .anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
+        if (isAdmin && !active) {
+            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
+            if (remaining == 0) {
+                throw new IllegalArgumentException(
+                        "No puedes desactivar el último ADMINISTRADOR");
+            }
+        }
+
         user.setIsActive(active);
         userRepository.save(user);
+        if (!active) {
+            securityConfigService.bumpSecurityVersion(null, "User deactivated: " + user.getEmail());
+        }
     }
 
     @Override

@@ -4,6 +4,8 @@ import com.saboresperu.restaurante.dto.*;
 import com.saboresperu.restaurante.entity.*;
 import com.saboresperu.restaurante.repository.*;
 import com.saboresperu.restaurante.service.interfaces.OrderService;
+import com.saboresperu.restaurante.service.interfaces.PaymentService;
+import com.saboresperu.restaurante.service.interfaces.PromotionEngine;
 import com.saboresperu.restaurante.service.interfaces.StockService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -34,9 +36,9 @@ public class OrderServiceImpl implements OrderService {
     private final CouponUsageRepository couponUsageRepository;
     private final ProductRepository productRepository;
     private final StockService stockService;
-    private final PaymentServiceImpl paymentService;
+    private final PaymentService paymentService;
     private final DailyMenuItemRepository dailyMenuItemRepository;
-    private final PromotionEngineImpl promotionEngine;
+    private final PromotionEngine promotionEngine;
 
     @Override
     @Transactional(readOnly = true)
@@ -210,21 +212,16 @@ public class OrderServiceImpl implements OrderService {
 
         order = orderRepository.save(order);
 
-        // Incrementar vendidos del menú del día
         for (CartItemDto line : cart.getItems()) {
             if (line.getDailyMenuItemId() == null) {
                 continue;
             }
-            DailyMenuItem dmi = dailyMenuItemRepository.findById(line.getDailyMenuItemId()).orElse(null);
-            if (dmi == null) {
-                continue;
+            int updated = dailyMenuItemRepository.incrementSoldIfAvailable(line.getDailyMenuItemId(), line.getQuantity());
+            if (updated == 0) {
+                Product product = productRepository.findById(line.getProductId()).orElse(null);
+                String name = product != null ? product.getName() : "producto";
+                throw new IllegalArgumentException("Cupo agotado o no disponible: " + name);
             }
-            int sold = dmi.getSoldQuantity() != null ? dmi.getSoldQuantity() : 0;
-            dmi.setSoldQuantity(sold + line.getQuantity());
-            if (dmi.getMaxQuota() != null && dmi.getSoldQuantity() >= dmi.getMaxQuota()) {
-                dmi.setIsAvailable(false);
-            }
-            dailyMenuItemRepository.save(dmi);
         }
 
         order.getItems().forEach(i -> {
@@ -243,14 +240,14 @@ public class OrderServiceImpl implements OrderService {
                 .createdAt(LocalDateTime.now())
                 .build());
 
-        if (coupon != null && discount.compareTo(ZERO) > 0) {
+        if (coupon != null && couponDiscount.compareTo(ZERO) > 0) {
             orderDiscountRepository.save(OrderDiscount.builder()
                     .order(order)
                     .sourceType("COUPON")
                     .coupon(coupon)
                     .codeSnapshot(coupon.getCode())
                     .nameSnapshot(coupon.getDescription() != null ? coupon.getDescription() : coupon.getCode())
-                    .discountAmount(discount)
+                    .discountAmount(couponDiscount)
                     .build());
 
             coupon.setUsedCount(coupon.getUsedCount() + 1);
@@ -426,4 +423,45 @@ public class OrderServiceImpl implements OrderService {
             return new DiscountResult(ZERO, null, null);
         }
     }
+
+    private PricingBreakdown price(CartDto cart, Branch branch, CustomerAddress address,
+                                   String couponCode) {
+        BigDecimal subtotal = money(cart.getSubtotal());
+        BigDecimal deliveryFee = address != null
+                ? calculateDeliveryFee(branch, address, subtotal)
+                : ZERO;
+
+        List<AppliedPromotion> autos = branch != null
+                ? promotionEngine.evaluateAutomatic(cart, branch.getId(), subtotal, deliveryFee)
+                : List.of();
+
+        BigDecimal promotionDiscount = autos.stream()
+                .map(AppliedPromotion::discountAmount)
+                .reduce(ZERO, BigDecimal::add);
+
+        DiscountResult couponResult = DiscountResult.none();
+        if (couponCode != null && !couponCode.isBlank()) {
+            couponResult = applyCoupon(couponCode.trim(), subtotal, null);
+        }
+
+        BigDecimal couponDiscount = couponResult.amount();
+        BigDecimal discount = money(promotionDiscount.add(couponDiscount));
+        BigDecimal total = money(subtotal.add(deliveryFee).subtract(discount).max(ZERO));
+
+        return new PricingBreakdown(
+                subtotal, deliveryFee,
+                money(promotionDiscount), money(couponDiscount),
+                discount, total, autos, couponResult);
+    }
+
+    private record PricingBreakdown(
+            BigDecimal subtotal,
+            BigDecimal deliveryFee,
+            BigDecimal promotionDiscount,
+            BigDecimal couponDiscount,
+            BigDecimal discount,
+            BigDecimal total,
+            List<AppliedPromotion> promotions,
+            DiscountResult couponResult
+    ) {}
 }

@@ -1,4 +1,4 @@
-package com.saboresperu.restaurante.controller.admin;
+package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.StockAdjustRequest;
 import com.saboresperu.restaurante.dto.StockEntryRequest;

@@ -16,7 +16,7 @@ public class AdminDashboardController {
     private final DashboardService dashboardService;
 
     @GetMapping({ "", "/", "/dashboard" })
-    @PreAuthorize("hasAuthority('PERM_DASHBOARD_VIEW')")
+    @PreAuthorize("hasAnyAuthority('PERM_ORDERS_VIEW','PERM_PRODUCTS_VIEW','PERM_STOCK_VIEW','PERM_REPORTS_VIEW','PERM_DASHBOARD_VIEW')")
     public String dashboard(Model model) {
         model.addAttribute("titulo", "Panel de control");
         model.addAttribute("kpi", dashboardService.getTodayKpis());

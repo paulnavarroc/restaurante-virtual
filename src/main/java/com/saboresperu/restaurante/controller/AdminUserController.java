@@ -1,9 +1,12 @@
 package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.UserAdminFormDto;
+import com.saboresperu.restaurante.entity.User;
 import com.saboresperu.restaurante.repository.BranchRepository;
-import com.saboresperu.restaurante.service.impl.AdminAclServiceImpl;
+import com.saboresperu.restaurante.repository.UserRepository;
+import com.saboresperu.restaurante.service.interfaces.AdminAclService;
 import com.saboresperu.restaurante.service.interfaces.AdminUserService;
+import com.saboresperu.restaurante.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,7 +26,9 @@ public class AdminUserController {
 
     private final AdminUserService adminUserService;
     private final BranchRepository branchRepository;
-    private final AdminAclServiceImpl adminAclService;
+    private final AdminAclService adminAclService;
+    private final UserRepository userRepository;
+    private final SecurityUtils securityUtils;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_USERS_VIEW')")
@@ -39,7 +44,7 @@ public class AdminUserController {
     public String createForm(Model model) {
         model.addAttribute("titulo", "Nuevo usuario");
         model.addAttribute("form", new UserAdminFormDto(
-                null, null, null, null, null, null, true, new HashSet<>(), null, null));
+                null, null, null, null, null, null, true, new HashSet<>(), null, null, null, null));
         addCatalogs(model);
         return "admin/users/form";
     }
@@ -54,7 +59,7 @@ public class AdminUserController {
             return "admin/users/form";
         }
         try {
-            adminUserService.create(form);
+            adminUserService.create(form, actorId());
             ra.addFlashAttribute("mensaje", "Usuario creado");
             return "redirect:/admin/users";
         } catch (RuntimeException ex) {
@@ -95,7 +100,7 @@ public class AdminUserController {
             return "admin/users/form";
         }
         try {
-            adminUserService.update(id, form);
+            adminUserService.update(id, form, actorId());
             ra.addFlashAttribute("mensaje", "Usuario actualizado");
             return "redirect:/admin/users";
         } catch (RuntimeException ex) {
@@ -117,5 +122,11 @@ public class AdminUserController {
     private void addCatalogs(Model model) {
         model.addAttribute("roles", adminUserService.listRoles());
         model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+    }
+
+    private Integer actorId() {
+        return userRepository.findByEmail(securityUtils.currentEmail())
+                .map(User::getId)
+                .orElse(null);
     }
 }
