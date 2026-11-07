@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}" lang="es">
+<head><title>Menús del día</title></head>
+<body>
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Menús del día</h1>
+            <p class="text-sm text-slate-500">Por sede y fecha</p>
+        </div>
+        <a sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')" th:href="@{/admin/daily-menus/new}" class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+            <i class="bi bi-plus-lg"></i> Nuevo
+        </a>
+    </div>
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Fecha</th>
+                    <th class="px-4 py-3">Sede</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3">Ítems</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="m : ${menus}" class="border-b border-slate-100">
+                    <td class="px-4 py-3" th:text="${m.menuDate()}"></td>
+                    <td class="px-4 py-3" th:text="${m.branchName()}"></td>
+                    <td class="px-4 py-3">
+                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold" th:text="${m.status()}"></span>
+                    </td>
+                    <td class="px-4 py-3" th:text="${m.itemCount()}"></td>
+                    <td class="px-4 py-3 text-right">
+                        <a th:href="@{/admin/daily-menus/{id}(id=${m.id()})}" class="text-sky-600 hover:underline">Abrir</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(menus)}">
+                    <td colspan="5" class="px-4 py-10 text-center text-slate-500">Sin menús</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

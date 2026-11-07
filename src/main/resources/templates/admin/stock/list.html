@@ -1,0 +1,76 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}"
+      lang="es">
+<head>
+    <title>Stock</title>
+</head>
+<body>
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Stock de insumos</h1>
+            <p class="text-sm text-slate-500">Disponible y reservado por sede</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a sec:authorize="hasAuthority('PERM_STOCK_ENTRY')"
+               th:href="@{/admin/stock/entry}"
+               class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                <i class="bi bi-plus-lg"></i> Entrada
+            </a>
+        </div>
+    </div>
+
+    <form method="get" th:action="@{/admin/stock}" class="mb-4 flex flex-wrap items-end gap-3">
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500">Sede</label>
+            <select name="branchId" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                <option value="">Todas</option>
+                <option th:each="b : ${branches}" th:value="${b.id}" th:text="${b.name}"
+                        th:selected="${branchId != null and branchId == b.id}"></option>
+            </select>
+        </div>
+        <button class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-white">Filtrar</button>
+    </form>
+
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+                <th class="px-4 py-3">Sede</th>
+                <th class="px-4 py-3">Insumo</th>
+                <th class="px-4 py-3">Disponible</th>
+                <th class="px-4 py-3">Reservado</th>
+                <th class="px-4 py-3">Costo prom.</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${rows}" class="border-b border-slate-100"
+                th:classappend="${r.lowStock} ? 'bg-amber-50' : ''">
+                <td class="px-4 py-3" th:text="${r.branchName}"></td>
+                <td class="px-4 py-3">
+                    <span class="font-medium" th:text="${r.ingredientName}"></span>
+                    <span class="text-xs text-slate-400" th:text="${' (' + r.unit + ')'}"></span>
+                    <span th:if="${r.lowStock}" class="ml-1 text-xs font-semibold text-amber-700">Bajo</span>
+                </td>
+                <td class="px-4 py-3" th:text="${r.quantityAvailable}"></td>
+                <td class="px-4 py-3" th:text="${r.quantityReserved}"></td>
+                <td class="px-4 py-3" th:text="${r.averageCost != null ? r.averageCost : '—'}"></td>
+                <td class="px-4 py-3 text-right">
+                    <a sec:authorize="hasAuthority('PERM_STOCK_ADJUST')"
+                       th:href="@{/admin/stock/adjust(branchId=${r.branchId}, ingredientId=${r.ingredientId})}"
+                       class="text-sky-600 hover:underline">Ajustar</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}">
+                <td colspan="6" class="px-4 py-8 text-center text-slate-500">Sin registros de stock</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

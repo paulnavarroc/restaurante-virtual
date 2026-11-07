@@ -1,37 +1,52 @@
 package com.saboresperu.restaurante.security;
 
-import com.saboresperu.restaurante.entity.Usuario;
-import com.saboresperu.restaurante.repository.UsuarioRepository;
+import com.saboresperu.restaurante.entity.User;
+import com.saboresperu.restaurante.repository.UserRepository;
+import com.saboresperu.restaurante.service.interfaces.EffectivePermissionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.*;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UsuarioRepository usuarioRepository;
+    private final UserRepository userRepository;
+    private final EffectivePermissionService effectivePermissionService;
 
     @Override
-    public UserDetails loadUserByUsername(String correo) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByCorreo(correo)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + correo));
+    @Transactional(readOnly = true)
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        User user = userRepository.findByEmailWithRoles(username.trim().toLowerCase())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        if (!Boolean.TRUE.equals(usuario.getActivo())) {
-            throw new UsernameNotFoundException("Usuario inactivo");
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new UsernameNotFoundException("User inactive: " + username);
         }
 
-        return User.builder()
-                .username(usuario.getCorreo())
-                .password(usuario.getContrasenaHash())
-                .authorities(
-                        usuario.getRoles().stream()
-                                .map(rol -> new SimpleGrantedAuthority("ROLE_" + rol.getNombre()))
-                                .collect(Collectors.toList())
-                )
+        Set<String> permCodes = effectivePermissionService.resolvePermissionCodes(user.getId());
+
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        user.getRoles().forEach(r -> authorities.add(new SimpleGrantedAuthority("ROLE_" + r.getName())));
+        permCodes.forEach(code -> authorities.add(new SimpleGrantedAuthority("PERM_" + code)));
+
+        return org.springframework.security.core.userdetails.User.builder()
+                .username(user.getEmail())
+                .password(user.getPasswordHash())
+                .authorities(authorities)
+                .accountExpired(false)
+                .accountLocked(false)
+                .credentialsExpired(false)
+                .disabled(false)
                 .build();
     }
 }

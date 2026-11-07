@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}" lang="es">
+<head><title>Usuarios</title></head>
+<body>
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Usuarios</h1>
+            <p class="text-sm text-slate-500">Cuentas y roles del sistema</p>
+        </div>
+        <a sec:authorize="hasAuthority('PERM_USERS_CREATE')"
+           th:href="@{/admin/users/new}"
+           class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+            Nuevo
+        </a>
+    </div>
+
+    <form method="get" th:action="@{/admin/users}" class="mb-4 flex gap-2">
+        <input type="search" name="q" th:value="${q}" placeholder="Nombre o correo"
+               class="rounded-xl border border-slate-300 px-3 py-2 text-sm flex-1 min-w-[200px]">
+        <button class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">Buscar</button>
+    </form>
+
+    <div class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+                <th class="px-4 py-3">Usuario</th>
+                <th class="px-4 py-3">Roles</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3">Último acceso</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="u : ${users}" class="border-b border-slate-100">
+                <td class="px-4 py-3">
+                    <div class="font-medium" th:text="${u.fullName()}"></div>
+                    <div class="text-xs text-slate-400" th:text="${u.email()}"></div>
+                </td>
+                <td class="px-4 py-3">
+                    <span th:each="r : ${u.roleNames()}"
+                          class="mr-1 inline-block rounded-full bg-slate-100 px-2 py-0.5 text-xs"
+                          th:text="${r}"></span>
+                </td>
+                <td class="px-4 py-3">
+                    <span th:text="${u.active() ? 'Activo' : 'Inactivo'}"
+                          class="text-xs font-semibold"></span>
+                </td>
+                <td class="px-4 py-3 text-xs text-slate-500"
+                    th:text="${u.lastAccessAt() != null} ? ${#temporals.format(u.lastAccessAt(), 'dd/MM/yyyy HH:mm')} : '—'"></td>
+                <td class="px-4 py-3 text-right">
+                    <a sec:authorize="hasAuthority('PERM_USERS_EDIT')"
+                       th:href="@{/admin/users/{id}/edit(id=${u.id()})}"
+                       class="text-sky-600 hover:underline">Editar</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

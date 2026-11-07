@@ -1,78 +1,118 @@
-package com.saboresperu.restaurante.controller;
+package com.saboresperu.restaurante.controller.admin;
 
-import com.saboresperu.restaurante.dto.EntradaStockRequestDTO;
-import com.saboresperu.restaurante.dto.InsumoDTO;
-import com.saboresperu.restaurante.service.interfaces.InsumoService;
-import com.saboresperu.restaurante.service.interfaces.SedeService;
-import com.saboresperu.restaurante.service.interfaces.StockService;
+import com.saboresperu.restaurante.dto.StockAdjustRequest;
+import com.saboresperu.restaurante.dto.StockEntryRequest;
+import com.saboresperu.restaurante.entity.User;
+import com.saboresperu.restaurante.repository.BranchRepository;
+import com.saboresperu.restaurante.repository.IngredientRepository;
+import com.saboresperu.restaurante.repository.UserRepository;
+import com.saboresperu.restaurante.service.interfaces.AdminStockService;
 import com.saboresperu.restaurante.util.SecurityUtils;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin/stock")
 @RequiredArgsConstructor
 public class AdminStockController {
 
-    private final StockService stockService;
-    private final InsumoService insumoService;
-    private final SedeService sedeService;
+    private final AdminStockService adminStockService;
+    private final BranchRepository branchRepository;
+    private final IngredientRepository ingredientRepository;
+    private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
 
+    private Integer currentUserId() {
+        return userRepository.findByEmail(securityUtils.currentEmail())
+                .map(User::getId)
+                .orElse(null);
+    }
+
     @GetMapping
-    public String listar(@RequestParam(required = false) Integer sedeId, Model model) {
-        var sedes = sedeService.listarActivas();
-        model.addAttribute("sedes", sedes);
-
-        if (sedeId == null && !sedes.isEmpty()) {
-            sedeId = sedes.get(0).getId();
-        }
-        model.addAttribute("sedeId", sedeId);
-
-        if (sedeId != null) {
-            model.addAttribute("stocks", stockService.listarStockPorSede(sedeId));
-        }
-        return "admin/stock";
+    @PreAuthorize("hasAuthority('PERM_STOCK_VIEW')")
+    public String list(@RequestParam(required = false) Integer branchId, Model model) {
+        model.addAttribute("titulo", "Stock");
+        model.addAttribute("rows", adminStockService.listByBranch(branchId));
+        model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+        model.addAttribute("branchId", branchId);
+        return "admin/stock/list";
     }
 
-    @GetMapping("/entrada")
-    public String formEntrada(@RequestParam(required = false) Integer sedeId, Model model) {
-        model.addAttribute("form", EntradaStockRequestDTO.builder().sedeId(sedeId).build());
-        model.addAttribute("sedes", sedeService.listarActivas());
-        model.addAttribute("insumos", insumosActivos());
-        return "admin/form-entrada-stock";
+    @GetMapping("/entry")
+    @PreAuthorize("hasAuthority('PERM_STOCK_ENTRY')")
+    public String entryForm(Model model) {
+        model.addAttribute("titulo", "Entrada de stock");
+        model.addAttribute("form", new StockEntryRequest(null, null, null, null, null));
+        model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+        model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+        return "admin/stock/entry";
     }
 
-    @PostMapping("/entrada")
-    public String registrarEntrada(@ModelAttribute("form") EntradaStockRequestDTO form,
-                                   Model model,
-                                   RedirectAttributes ra) {
+    @PostMapping("/entry")
+    @PreAuthorize("hasAuthority('PERM_STOCK_ENTRY')")
+    public String entrySubmit(@Valid @ModelAttribute("form") StockEntryRequest form,
+                              BindingResult bindingResult,
+                              RedirectAttributes ra,
+                              Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("titulo", "Entrada de stock");
+            model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+            model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+            return "admin/stock/entry";
+        }
         try {
-            if (form.getSedeId() == null || form.getInsumoId() == null
-                    || form.getCantidad() == null
-                    || form.getCantidad().signum() <= 0) {
-                throw new IllegalArgumentException("Sede, insumo y cantidad positiva son obligatorios");
-            }
-            stockService.registrarEntrada(form, securityUtils.getUsuarioIdActual());
-            ra.addFlashAttribute("mensaje", "Entrada de stock registrada correctamente");
-            return "redirect:/admin/stock?sedeId=" + form.getSedeId();
-        } catch (RuntimeException e) {
-            model.addAttribute("error", e.getMessage());
-            model.addAttribute("form", form);
-            model.addAttribute("sedes", sedeService.listarActivas());
-            model.addAttribute("insumos", insumosActivos());
-            return "admin/form-entrada-stock";
+            adminStockService.registerEntry(form, currentUserId());
+            ra.addFlashAttribute("mensaje", "Entrada registrada");
+            return "redirect:/admin/stock?branchId=" + form.branchId();
+        } catch (RuntimeException ex) {
+            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("titulo", "Entrada de stock");
+            model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+            model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+            return "admin/stock/entry";
         }
     }
 
-    private List<InsumoDTO> insumosActivos() {
-        return insumoService.listarTodos().stream()
-                .filter(i -> Boolean.TRUE.equals(i.getActivo()))
-                .toList();
+    @GetMapping("/adjust")
+    @PreAuthorize("hasAuthority('PERM_STOCK_ADJUST')")
+    public String adjustForm(@RequestParam Integer branchId,
+                             @RequestParam Integer ingredientId,
+                             Model model) {
+        model.addAttribute("titulo", "Ajuste de stock");
+        model.addAttribute("form", new StockAdjustRequest(branchId, ingredientId, null, null));
+        model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+        model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+        return "admin/stock/adjust";
+    }
+
+    @PostMapping("/adjust")
+    @PreAuthorize("hasAuthority('PERM_STOCK_ADJUST')")
+    public String adjustSubmit(@Valid @ModelAttribute("form") StockAdjustRequest form,
+                               BindingResult bindingResult,
+                               RedirectAttributes ra,
+                               Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("titulo", "Ajuste de stock");
+            model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+            model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+            return "admin/stock/adjust";
+        }
+        try {
+            adminStockService.adjust(form, currentUserId());
+            ra.addFlashAttribute("mensaje", "Ajuste registrado");
+            return "redirect:/admin/stock?branchId=" + form.branchId();
+        } catch (RuntimeException ex) {
+            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("titulo", "Ajuste de stock");
+            model.addAttribute("branches", branchRepository.findByIsActiveTrue());
+            model.addAttribute("ingredients", ingredientRepository.findByIsActiveTrueOrderByNameAsc());
+            return "admin/stock/adjust";
+        }
     }
 }

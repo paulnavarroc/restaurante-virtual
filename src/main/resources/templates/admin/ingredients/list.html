@@ -1,0 +1,53 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}" lang="es">
+<head><title>Insumos</title></head>
+<body>
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Insumos</h1>
+            <p class="text-sm text-slate-500">Materias primas para recetas y stock</p>
+        </div>
+        <a sec:authorize="hasAuthority('PERM_INGREDIENTS_MANAGE')"
+           th:href="@{/admin/ingredients/new}"
+           class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+            Nuevo
+        </a>
+    </div>
+    <div class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+                <th class="px-4 py-3">Nombre</th>
+                <th class="px-4 py-3">Unidad</th>
+                <th class="px-4 py-3">Stock ilim.</th>
+                <th class="px-4 py-3">Alerta mín.</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="i : ${ingredients}" class="border-b border-slate-100">
+                <td class="px-4 py-3 font-medium" th:text="${i.name()}"></td>
+                <td class="px-4 py-3" th:text="${i.unit()}"></td>
+                <td class="px-4 py-3" th:text="${i.unlimitedStock() ? 'Sí' : 'No'}"></td>
+                <td class="px-4 py-3" th:text="${i.minStockAlert() != null ? i.minStockAlert() : '—'}"></td>
+                <td class="px-4 py-3">
+                    <span th:text="${i.active() ? 'Activo' : 'Inactivo'}"
+                          class="text-xs font-semibold"></span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                    <a sec:authorize="hasAuthority('PERM_INGREDIENTS_MANAGE')"
+                       th:href="@{/admin/ingredients/{id}/edit(id=${i.id()})}"
+                       class="text-sky-600 hover:underline">Editar</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

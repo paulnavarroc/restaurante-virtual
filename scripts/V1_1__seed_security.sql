@@ -264,31 +264,32 @@ GO
 
 INSERT INTO dbo.MenuItems (Code, Label, Route, Icon, MenuGroup, Context, SortOrder) VALUES
 -- ADMIN
-(N'MENU_ADMIN_DASHBOARD',    N'Dashboard',           N'/admin/dashboard',    N'bi-speedometer2',        N'Principal',           N'ADMIN', 10),
-(N'MENU_ADMIN_PRODUCTS',     N'Products',            N'/admin/productos',    N'bi-egg-fried',           N'Catalog',             N'ADMIN', 20),
-(N'MENU_ADMIN_INGREDIENTS',  N'Ingredients',         N'/admin/insumos',      N'bi-box-seam',            N'Catalog',             N'ADMIN', 30),
-(N'MENU_ADMIN_STOCK',        N'Stock',               N'/admin/stock',        N'bi-clipboard-data',      N'Catalog',             N'ADMIN', 40),
-(N'MENU_ADMIN_DAILY_MENUS',  N'Daily menus',         N'/admin/menus',        N'bi-calendar-day',        N'Operations',          N'ADMIN', 50),
-(N'MENU_ADMIN_PROMOTIONS',   N'Promotions',          N'/admin/promociones',  N'bi-percent',             N'Operations',          N'ADMIN', 60),
-(N'MENU_ADMIN_COUPONS',      N'Coupons',             N'/admin/cupones',      N'bi-ticket-perforated',   N'Operations',          N'ADMIN', 70),
-(N'MENU_ADMIN_ORDERS',       N'Orders',              N'/admin/pedidos',      N'bi-bag-check',           N'Operations',          N'ADMIN', 80),
-(N'MENU_ADMIN_CUSTOMERS',    N'Customers',           N'/admin/clientes',     N'bi-person-lines-fill',   N'People',              N'ADMIN', 90),
-(N'MENU_ADMIN_USERS',        N'Users',               N'/admin/usuarios',     N'bi-people',              N'People',              N'ADMIN', 100),
-(N'MENU_ADMIN_ROLES',        N'Roles',               N'/admin/roles',        N'bi-shield-check',        N'Security',            N'ADMIN', 110),
-(N'MENU_ADMIN_PERMISSIONS',  N'Permissions',         N'/admin/permisos',     N'bi-key',                 N'Security',            N'ADMIN', 120),
-(N'MENU_ADMIN_AUDIT',        N'Access audit',        N'/admin/auditoria',    N'bi-shield-lock',         N'Security',            N'ADMIN', 130),
-(N'MENU_ADMIN_BRANCHES',     N'Branches',            N'/admin/sedes',        N'bi-shop',                N'Config',              N'ADMIN', 140),
+(N'MENU_ADMIN_DASHBOARD',    N'Dashboard',           N'/admin/dashboard',		N'bi-speedometer2',        N'Principal',           N'ADMIN', 10),
+(N'MENU_ADMIN_PRODUCTS',     N'Products',            N'/admin/products',		N'bi-egg-fried',           N'Catalog',             N'ADMIN', 20),
+(N'MENU_ADMIN_INGREDIENTS',  N'Ingredients',         N'/admin/ingredients',		N'bi-box-seam',            N'Catalog',             N'ADMIN', 30),
+(N'MENU_ADMIN_STOCK',        N'Stock',               N'/admin/stock',			N'bi-clipboard-data',      N'Catalog',             N'ADMIN', 40),
+(N'MENU_ADMIN_DAILY_MENUS',  N'Daily menus',         N'/admin/daily-menus',		N'bi-calendar-day',        N'Operations',          N'ADMIN', 50),
+(N'MENU_ADMIN_PROMOTIONS',   N'Promotions',          N'/admin/promotions',		N'bi-percent',             N'Operations',          N'ADMIN', 60),
+(N'MENU_ADMIN_COUPONS',      N'Coupons',             N'/admin/coupons',			N'bi-ticket-perforated',   N'Operations',          N'ADMIN', 70),
+(N'MENU_ADMIN_ORDERS',       N'Orders',              N'/admin/orders',			N'bi-bag-check',           N'Operations',          N'ADMIN', 80),
+(N'MENU_ADMIN_CUSTOMERS',    N'Customers',           N'/admin/customers',		N'bi-person-lines-fill',   N'People',              N'ADMIN', 90),
+(N'MENU_ADMIN_USERS',        N'Users',               N'/admin/users',			N'bi-people',              N'People',              N'ADMIN', 100),
+(N'MENU_ADMIN_ROLES',        N'Roles',               N'/admin/roles',			N'bi-shield-check',        N'Security',            N'ADMIN', 110),
+(N'MENU_ADMIN_PERMISSIONS',  N'Permissions',         N'/admin/permissions',		N'bi-key',                 N'Security',            N'ADMIN', 120),
+(N'MENU_ADMIN_AUDIT',        N'Access audit',        N'/admin/audit',			N'bi-shield-lock',         N'Security',            N'ADMIN', 130),
+(N'MENU_ADMIN_BRANCHES',     N'Branches',            N'/admin/branches',		N'bi-shop',                N'Config',              N'ADMIN', 140),
 -- KITCHEN
-(N'MENU_KITCHEN_ORDERS',     N'Kitchen orders',      N'/cocina/pedidos',     N'bi-egg-fried',           N'Kitchen',             N'KITCHEN', 10),
+(N'MENU_KITCHEN_ORDERS',     N'Kitchen orders',      N'/kitchen/orders',		N'bi-egg-fried',           N'Kitchen',             N'KITCHEN', 10),
 -- COURIER
-(N'MENU_COURIER_DELIVERIES', N'Deliveries',          N'/repartidor/entregas',N'bi-bicycle',             N'Delivery',            N'COURIER', 10),
+(N'MENU_COURIER_DELIVERIES', N'Deliveries',          N'/courier/deliveries',	N'bi-bicycle',           N'Delivery',            N'COURIER', 10),
 -- CUSTOMER
-(N'MENU_CUSTOMER_MENU',      N'Menu',                N'/menu',               N'bi-journal-richtext',    N'Store',               N'CUSTOMER', 10),
-(N'MENU_CUSTOMER_CART',      N'Cart',                N'/cliente/carrito',    N'bi-cart3',               N'Store',               N'CUSTOMER', 20),
-(N'MENU_CUSTOMER_ORDERS',    N'My orders',           N'/cliente/pedidos',    N'bi-bag',                 N'Account',             N'CUSTOMER', 30),
-(N'MENU_CUSTOMER_ADDRESSES', N'Addresses',           N'/cliente/direcciones',N'bi-geo-alt',             N'Account',             N'CUSTOMER', 40),
-(N'MENU_CUSTOMER_PROFILE',   N'Profile',             N'/cliente/perfil',     N'bi-person',              N'Account',             N'CUSTOMER', 50);
+(N'MENU_CUSTOMER_MENU',      N'Menu',                N'/menu',					N'bi-journal-richtext',    N'Store',               N'CUSTOMER', 10),
+(N'MENU_CUSTOMER_CART',      N'Cart',                N'/customer/cart',			N'bi-cart3',               N'Store',               N'CUSTOMER', 20),
+(N'MENU_CUSTOMER_ORDERS',    N'My orders',           N'/customer/orders',		N'bi-bag',                 N'Account',             N'CUSTOMER', 30),
+(N'MENU_CUSTOMER_ADDRESSES', N'Addresses',           N'/customer/addresses',	N'bi-geo-alt',             N'Account',             N'CUSTOMER', 40),
+(N'MENU_CUSTOMER_PROFILE',   N'Profile',             N'/customer/profile',		N'bi-person',              N'Account',             N'CUSTOMER', 50);
 GO
+
 
 /* =========================================================
    6. Menu → required permissions (at least one)
@@ -393,4 +394,24 @@ END
 GO
 
 PRINT N'Seed V1_1 security completed.';
+GO
+
+-- Categories/Regions already seeded
+DECLARE @cat INT = (SELECT TOP 1 IdCategory FROM dbo.Categories WHERE Name = N'Fondos');
+DECLARE @reg INT = (SELECT TOP 1 IdRegion FROM dbo.Regions WHERE Name = N'COAST');
+
+IF @cat IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.Products)
+BEGIN
+    INSERT INTO dbo.Products (IdCategory, IdRegion, Name, Description, BasePrice, PrepTimeMinutes, IsUnlimitedStock, IsActive, CreatedAt)
+    VALUES
+    (@cat, @reg, N'Ceviche clásico', N'Pescado fresco, limón, cebolla y ají.', 32.00, 20, 1, 1, SYSUTCDATETIME()),
+    (@cat, @reg, N'Lomo saltado', N'Lomo, cebolla, tomate y papas fritas.', 38.00, 25, 1, 1, SYSUTCDATETIME()),
+    (@cat, @reg, N'Ají de gallina', N'Crema de ají amarillo con pollo.', 28.00, 25, 1, 1, SYSUTCDATETIME());
+END
+GO
+
+INSERT INTO dbo.Ingredients (Name, Unit, IsUnlimitedStock, MinStockAlert, IsActive)
+VALUES (N'Pescado fresco', N'kg', 0, 5, 1),
+        (N'Limón', N'kg', 0, 2, 1),
+        (N'Pollo', N'kg', 0, 5, 1);
 GO

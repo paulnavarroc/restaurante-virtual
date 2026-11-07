@@ -1,18 +1,23 @@
 package com.saboresperu.restaurante.security;
 
-import jakarta.servlet.DispatcherType;
+import com.saboresperu.restaurante.security.CustomUserDetailsService;
+import com.saboresperu.restaurante.security.RoleBasedAuthSuccessHandler;
+import com.saboresperu.restaurante.security.SecurityVersionFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -20,10 +25,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final CustomUserDetailsService userDetailsService;
+    private final CustomUserDetailsService customUserDetailsService;
     private final RoleBasedAuthSuccessHandler successHandler;
-    private final LoginFailureHandler failureHandler;
-    private final LogoutAuditHandler logoutAuditHandler;
+    private final SecurityVersionFilter securityVersionFilter;
+    private final AuthenticationFailureHandler loginFailureHandler;
+    private final LogoutSuccessHandler logoutSuccessHandler;
+    private final LogoutAuditHandler logoutSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -32,23 +39,17 @@ public class SecurityConfig {
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+        DaoAuthenticationProvider provider =
+                new DaoAuthenticationProvider(customUserDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authenticationProvider(authenticationProvider())
-                //.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD, DispatcherType.ERROR).permitAll()
                         .requestMatchers(
                                 "/",
                                 "/menu",
@@ -56,43 +57,53 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                "/login",
-                                "/registro",
-                                "/perform_login").permitAll()
-                        .requestMatchers("/media/**").permitAll()
-                        .requestMatchers("/api/ubigeo/**").authenticated()
-                        .requestMatchers("/api/dev/**").hasRole("CLIENTE")
-                        .requestMatchers("/cliente/**").hasRole("CLIENTE")
-                        //.requestMatchers("/api/ubigeo/**").hasRole("CLIENTE")
-                        .requestMatchers("/cliente/direcciones/**").hasRole("CLIENTE")
-                        .requestMatchers("/cliente/carrito/**", "/cliente/pedidos/**",
-                                "/cliente/pedido/**", "/cliente/direcciones/**")
-                        .hasRole("CLIENTE")
-                        .requestMatchers("/cocina/**").hasRole("CHEF")
-                        .requestMatchers("/repartidor/**").hasRole("REPARTIDOR")
-                        //.requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
-                        .requestMatchers("/admin/usuarios/**", "/admin/clientes/**", "/admin/auditoria/**")
-                        .hasRole("ADMINISTRADOR")
-                        .requestMatchers("/admin/**").hasAnyRole("ADMINISTRADOR", "OPERACIONES")
+                                "/media/**",
+                                "/webjars/**",
+                                "/error",
+                                "/error/**",
+                                "/favicon.ico"
+                        ).permitAll()
+                        .requestMatchers("/login", "/register", "/register/**").permitAll()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMINISTRATOR", "MANAGER", "OPERATIONS", "WAREHOUSE", "CUSTOMER_SERVICE", "CASHIER")
+                        .requestMatchers("/kitchen/**").hasAnyRole("CHEF", "ADMINISTRATOR", "MANAGER")
+                        .requestMatchers("/courier/**").hasAnyRole("COURIER", "ADMINISTRATOR", "MANAGER")
+                        .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMINISTRATOR")
 
+                        /*.requestMatchers("/admin/users/**", "/admin/roles/**", "/admin/permission/**")
+                        .hasAnyAuthority("PERM_USERS_VIEW", "PERM_ROLES_MANAGE", "PERM_PERMISSIONS_MANAGE")
+                        .requestMatchers("/admin/audit/**")
+                        .hasAnyAuthority("PERM_ACCESS_LOGS_VIEW", "PERM_SECURITY_AUDIT_VIEW")*/
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        .loginProcessingUrl("/perform_login")
+                        .loginProcessingUrl("/login")
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .successHandler(successHandler)
-                        .failureHandler(failureHandler)
+                        .failureHandler(loginFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
                         .logoutUrl("/logout")
-                        .logoutSuccessHandler(logoutAuditHandler)
-                        //.invalidateHttpSession(true)
-                        //.deleteCookies("JSESSIONID")
+                        .logoutSuccessHandler(logoutSuccessHandler)
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID")
                         .permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .accessDeniedPage("/error/403")
+                )
+                .csrf(csrf -> csrf
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                )
+                .sessionManagement(session -> session
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false)
                 );
+
+        http.addFilterAfter(securityVersionFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

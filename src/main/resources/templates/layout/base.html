@@ -1,109 +1,114 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title layout:title-pattern="$CONTENT_TITLE – $LAYOUT_TITLE">Sabores Perú</title>
+    <title layout:title-pattern="$CONTENT_TITLE · Sabores Perú">Sabores Perú</title>
     <link rel="stylesheet" th:href="@{/css/app.css}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <th:block layout:fragment="head"></th:block>
 </head>
-<body class="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 antialiased">
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
 
-<!-- Navbar público / cliente -->
-<header class="sticky top-0 z-50 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <a th:href="@{/menu}" class="flex items-center gap-2 text-lg font-bold text-sky-700">
-            <i class="bi bi-fire text-sky-600"></i>
-            Sabores Perú
+<header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a th:href="@{/}" class="flex items-center gap-2 text-lg font-bold text-sky-700">
+            <i class="bi bi-fire"></i>
+            <span>Sabores Perú</span>
         </a>
 
-        <nav class="flex flex-wrap items-center gap-1 text-sm text-slate-600 sm:gap-2">
-            <a th:href="@{/menu}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
-                <i class="bi bi-journal-richtext"></i>
-                <span class="hidden sm:inline">Menú</span>
+        <nav class="hidden items-center gap-1 text-sm font-medium md:flex">
+            <a th:href="@{/menu}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Menú</a>
+
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/orders}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Mis pedidos</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/addresses}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Direcciones</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/profile}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Perfil</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/cart}" class="relative inline-flex items-center gap-1 rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">
+                <i class="bi bi-cart3"></i> Carrito
+                <span th:if="${cartCount != null and cartCount > 0}" class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white" th:text="${cartCount}">0</span>
             </a>
 
-            <!-- Cliente -->
-            <a sec:authorize="hasRole('CLIENTE')" th:href="@{/cliente/pedidos}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Mis pedidos</a>
-            <a sec:authorize="hasRole('CLIENTE')" th:href="@{/cliente/direcciones}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Direcciones</a>
-            <a sec:authorize="hasRole('CLIENTE')" th:href="@{/cliente/perfil}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">Perfil</a>
-
-            <a sec:authorize="hasRole('CLIENTE')" th:href="@{/cliente/carrito}"
-               class="relative rounded-lg p-2 hover:bg-sky-50">
-                <i class="bi bi-cart3 text-lg"></i>
-                <span th:if="${carritoCount != null and carritoCount > 0}"
-                      th:text="${carritoCount}"
-                      class="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-sky-600 px-1 text-[10px] font-bold text-white">0</span>
-            </a>
-
-            <!-- Accesos rápidos a paneles (sin listar todo el admin aquí) -->
-            <a sec:authorize="hasRole('CHEF')" th:href="@{/cocina/pedidos}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
-                <i class="bi bi-egg-fried"></i> Cocina
-            </a>
-            <a sec:authorize="hasRole('REPARTIDOR')" th:href="@{/repartidor/entregas}"
-               class="rounded-lg px-2 py-1.5 hover:bg-sky-50 hover:text-sky-700">
-                <i class="bi bi-bicycle"></i> Entregas
-            </a>
-            <a sec:authorize="hasAnyRole('ADMINISTRADOR','OPERACIONES')" th:href="@{/admin/dashboard}"
-               class="rounded-lg px-2 py-1.5 font-medium text-sky-700 hover:bg-sky-50">
-                <i class="bi bi-speedometer2"></i> Panel
-            </a>
-
-            <span sec:authorize="isAuthenticated()"
-                  class="hidden max-w-[8rem] truncate text-slate-500 sm:inline"
-                  sec:authentication="name"></span>
-
-            <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
-                <button type="submit" class="btn-secondary !py-1.5 !text-xs">
-                    <i class="bi bi-box-arrow-right"></i> Salir
-                </button>
-            </form>
-
-            <a sec:authorize="!isAuthenticated()" th:href="@{/login}"
-               class="btn-secondary !py-1.5 !text-xs">Entrar</a>
-            <a sec:authorize="!isAuthenticated()" th:href="@{/registro}"
-               class="btn-primary !py-1.5 !text-xs">Registrarse</a>
+            <a sec:authorize="hasRole('CHEF')" th:href="@{/kitchen/orders}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Cocina</a>
+            <a sec:authorize="hasRole('COURIER')" th:href="@{/courier/deliveries}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Entregas</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRATOR','MANAGER','OPERATIONS','WAREHOUSE','CASHIER','CUSTOMER_SERVICE')" th:href="@{/admin/dashboard}" class="rounded-lg px-3 py-2 text-slate-600 hover:bg-sky-50 hover:text-sky-700">Admin</a>
         </nav>
+
+        <div class="flex items-center gap-2">
+            <th:block sec:authorize="!isAuthenticated()">
+                <a th:href="@{/login}" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Entrar</a>
+                <a th:href="@{/register}" class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">Registro</a>
+            </th:block>
+            <th:block sec:authorize="isAuthenticated()">
+                <span class="hidden max-w-[140px] truncate text-xs text-slate-500 sm:inline" sec:authentication="name"></span>
+                <form th:action="@{/logout}" method="post" class="inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit"
+                            class="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span class="hidden sm:inline">Salir</span>
+                    </button>
+                </form>
+            </th:block>
+
+            <button type="button" id="mobileNavToggle"
+                    class="inline-flex rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden"
+                    aria-label="Menú">
+                <i class="bi bi-list text-xl"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile nav -->
+    <div id="mobileNav" class="hidden border-t border-slate-200 bg-white px-4 py-3 md:hidden">
+        <div class="flex flex-col gap-1 text-sm font-medium">
+            <a th:href="@{/menu}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Menú</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/orders}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Mis pedidos</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/cart}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Carrito</a>
+            <a sec:authorize="hasRole('CUSTOMER')" th:href="@{/customer/addresses}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Direcciones</a>
+            <a sec:authorize="hasRole('CHEF')" th:href="@{/kitchen/orders}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Cocina</a>
+            <a sec:authorize="hasRole('COURIER')" th:href="@{/courier/deliveries}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Entregas</a>
+            <a sec:authorize="hasAnyRole('ADMINISTRATOR','MANAGER','OPERATIONS')" th:href="@{/admin/dashboard}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Admin</a>
+            <a sec:authorize="!isAuthenticated()" th:href="@{/login}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Entrar</a>
+            <a sec:authorize="!isAuthenticated()" th:href="@{/register}" class="rounded-lg px-3 py-2 hover:bg-sky-50">Registro</a>
+        </div>
     </div>
 </header>
 
-<!-- Flash -->
-<div class="mx-auto max-w-6xl px-4 pt-4">
+<!-- Flash global -->
+<div class="mx-auto max-w-6xl px-4 pt-4 sm:px-6"
+     th:if="${mensaje != null or error != null}">
     <div th:if="${mensaje}"
-         class="mb-4 flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-        <i class="bi bi-check-circle-fill"></i>
-        <span th:text="${mensaje}"></span>
-    </div>
+         class="mb-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+         th:text="${mensaje}"></div>
     <div th:if="${error}"
-         class="mb-4 flex items-center gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-800">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-        <span th:text="${error}"></span>
-    </div>
+         class="mb-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+         th:text="${error}"></div>
 </div>
 
-<main class="flex-1" layout:fragment="content"></main>
+<main class="mx-auto min-h-[calc(100vh-8rem)] max-w-6xl px-4 py-6 sm:px-6"
+      layout:fragment="content">
+</main>
 
-<footer class="mt-12 border-t border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-6xl flex-col justify-between gap-4 px-4 py-8 text-sm text-slate-500 sm:flex-row">
-        <div>
-            <p class="font-semibold text-slate-800">Sabores Perú</p>
-            <p>Comida regional de Costa, Sierra y Selva a domicilio.</p>
-        </div>
-        <div class="flex gap-4">
-            <a th:href="@{/menu}" class="hover:text-sky-700">Menú</a>
-            <a th:href="@{/login}" class="hover:text-sky-700">Iniciar sesión</a>
-        </div>
+<footer class="border-t border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:px-6">
+        <span>© Sabores Perú</span>
+        <a th:href="@{/menu}" class="hover:text-sky-600">Ver menú</a>
     </div>
 </footer>
 
+<script>
+    (function () {
+        const btn = document.getElementById('mobileNavToggle');
+        const panel = document.getElementById('mobileNav');
+        if (btn && panel) {
+            btn.addEventListener('click', function () {
+                panel.classList.toggle('hidden');
+            });
+        }
+    })();
+</script>
+<th:block layout:fragment="scripts"></th:block>
 </body>
 </html>

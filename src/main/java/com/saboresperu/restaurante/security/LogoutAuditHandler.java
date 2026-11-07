@@ -1,33 +1,37 @@
 package com.saboresperu.restaurante.security;
 
-import com.saboresperu.restaurante.repository.UsuarioRepository;
-import com.saboresperu.restaurante.service.interfaces.AuditoriaAccesoService;
+import com.saboresperu.restaurante.entity.User;
+import com.saboresperu.restaurante.repository.UserRepository;
+import com.saboresperu.restaurante.service.interfaces.AccessAuditService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
+import org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
-public class LogoutAuditHandler implements LogoutSuccessHandler {
+public class LogoutAuditHandler extends SimpleUrlLogoutSuccessHandler {
 
-    private final UsuarioRepository usuarioRepository;
-    private final AuditoriaAccesoService auditoriaAccesoService;
+    private final AccessAuditService accessAuditService;
+    private final UserRepository userRepository;
+
+    public LogoutAuditHandler(AccessAuditService accessAuditService, UserRepository userRepository) {
+        this.accessAuditService = accessAuditService;
+        this.userRepository = userRepository;
+        setDefaultTargetUrl("/login?logout");
+    }
 
     @Override
-    public void onLogoutSuccess(HttpServletRequest request,
-                                HttpServletResponse response,
-                                Authentication authentication)
-            throws IOException, ServletException {
+    public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         if (authentication != null) {
-            usuarioRepository.findByCorreo(authentication.getName())
-                    .ifPresent(u -> auditoriaAccesoService.registrarLogout(u, request));
+            String email = authentication.getName();
+            Integer userId = userRepository.findByEmail(email).map(User::getId).orElse(null);
+            String sessionId = request.getSession(false) != null ? request.getSession(false).getId() : null;
+            accessAuditService.logout(userId, email, request, sessionId);
         }
-        response.sendRedirect(request.getContextPath() + "/login?logout");
+        super.onLogoutSuccess(request, response, authentication);
     }
 }

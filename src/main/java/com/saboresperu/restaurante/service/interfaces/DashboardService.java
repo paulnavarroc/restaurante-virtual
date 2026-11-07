@@ -1,7 +1,7 @@
 package com.saboresperu.restaurante.service.interfaces;
 
-import com.saboresperu.restaurante.dto.DashboardDTO;
+import com.saboresperu.restaurante.dto.DashboardKpiDto;
 
 public interface DashboardService {
-    DashboardDTO obtener(Integer sedeId);
+    DashboardKpiDto getKpis();
 }

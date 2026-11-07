@@ -1,0 +1,74 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/admin}"
+      lang="es">
+<head>
+    <title>Pedidos</title>
+</head>
+<body>
+<section layout:fragment="content">
+    <div class="mb-6">
+        <h1 class="text-xl font-bold text-slate-900">Pedidos</h1>
+        <p class="text-sm text-slate-500">Gestión operativa de pedidos</p>
+    </div>
+
+    <form method="get" th:action="@{/admin/orders}" class="mb-4 flex flex-wrap items-end gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500">Estado</label>
+            <select name="status" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                <option value="">Todos</option>
+                <option th:each="s : ${statuses}" th:value="${s.code}" th:text="${s.name}" th:selected="${status != null and status == s.code}"></option>
+            </select>
+        </div>
+        <div>
+            <label class="mb-1 block text-xs font-medium text-slate-500">Sede</label>
+            <select name="branchId" class="rounded-xl border border-slate-300 px-3 py-2 text-sm">
+                <option value="">Todas</option>
+                <option th:each="b : ${branches}" th:value="${b.id}" th:text="${b.name}" th:selected="${branchId != null and branchId == b.id}"></option>
+            </select>
+        </div>
+        <button class="rounded-xl bg-slate-800 px-4 py-2 text-sm font-medium text-white">Filtrar</button>
+    </form>
+
+    <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+                <th class="px-4 py-3">#</th>
+                <th class="px-4 py-3">Cliente</th>
+                <th class="px-4 py-3">Sede</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3">Pago</th>
+                <th class="px-4 py-3">Total</th>
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="o : ${orders}" class="border-b border-slate-100 hover:bg-slate-50">
+                <td class="px-4 py-3 font-semibold" th:text="${o.id()}"></td>
+                <td class="px-4 py-3">
+                    <div th:text="${o.customerName()}"></div>
+                    <div class="text-xs text-slate-400" th:text="${o.customerEmail()}"></div>
+                </td>
+                <td class="px-4 py-3" th:text="${o.branchName()}"></td>
+                <td class="px-4 py-3">
+                    <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold" th:text="${o.statusName()}"></span>
+                </td>
+                <td class="px-4 py-3 text-xs" th:text="${o.paymentStatus()}"></td>
+                <td class="px-4 py-3 font-medium" th:text="${'S/ ' + #numbers.formatDecimal(o.total(), 1, 2)}"></td>
+                <td class="px-4 py-3 text-slate-500" th:text="${o.orderedAtLabel()}"></td>
+                <td class="px-4 py-3 text-right">
+                    <a th:href="@{/admin/orders/{id}(id=${o.id()})}" class="text-sky-600 hover:underline">Ver</a>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(orders)}">
+                <td colspan="8" class="px-4 py-10 text-center text-slate-500">No hay pedidos</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>

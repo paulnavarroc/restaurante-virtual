@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}"
+      lang="es">
+<head>
+  <title>Inicio</title>
+</head>
+<body>
+<section layout:fragment="content">
+  <!-- Banner -->
+  <div class="overflow-hidden rounded-2xl bg-gradient-to-br from-sky-600 to-sky-800 px-6 py-12 text-white shadow-sm sm:px-10">
+    <p class="text-sm font-medium text-sky-100">Comida regional peruana</p>
+    <h1 class="mt-2 max-w-xl text-3xl font-bold tracking-tight sm:text-4xl">
+      Sabores de la costa, sierra y selva en tu mesa
+    </h1>
+    <p class="mt-3 max-w-lg text-sky-100">
+      Explora el menú, arma tu pedido y recibe en casa.
+    </p>
+    <div class="mt-6 flex flex-wrap gap-3">
+      <a th:href="@{/menu}"
+         class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-sky-700 hover:bg-sky-50">
+        <i class="bi bi-journal-richtext"></i> Ver menú
+      </a>
+      <a th:href="@{/register}"
+         class="inline-flex items-center gap-2 rounded-xl border border-white/40 px-5 py-2.5 text-sm font-semibold text-white hover:bg-white/10">
+        Crear cuenta
+      </a>
+    </div>
+  </div>
+
+  <div class="mt-10">
+    <div class="mb-4 flex items-center justify-between">
+      <h2 class="text-lg font-bold text-slate-900">Destacados</h2>
+      <a th:href="@{/menu}" class="text-sm font-medium text-sky-600 hover:text-sky-700">Ver todo →</a>
+    </div>
+
+    <div th:if="${#lists.isEmpty(products)}" class="rounded-xl border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500">
+      Aún no hay productos publicados.
+    </div>
+
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <article th:each="p, stat : ${products}" th:if="${stat.index < 6}"
+               class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex h-40 items-center justify-center bg-slate-100 text-slate-400">
+          <img th:if="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}"
+               th:src="${p.imageUrl}" th:alt="${p.name}"
+               class="h-full w-full object-cover">
+          <i th:unless="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}"
+             class="bi bi-egg-fried text-4xl"></i>
+        </div>
+        <div class="flex flex-1 flex-col p-4">
+          <span class="text-xs font-medium text-sky-600" th:text="${p.categoryName}">Categoría</span>
+          <h3 class="mt-1 font-semibold text-slate-900" th:text="${p.name}">Plato</h3>
+          <p class="mt-1 line-clamp-2 text-sm text-slate-500" th:text="${p.description}">Desc</p>
+          <div class="mt-auto flex items-center justify-between pt-4">
+                        <span class="text-lg font-bold text-slate-900"
+                              th:text="${'S/ ' + #numbers.formatDecimal(p.basePrice, 1, 2)}">S/ 0.00</span>
+            <a th:href="@{/menu}" class="text-sm font-medium text-sky-600 hover:underline">Ver menú</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+</body>
+</html>
