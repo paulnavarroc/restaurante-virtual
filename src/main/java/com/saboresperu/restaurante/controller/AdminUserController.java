@@ -1,5 +1,6 @@
 package com.saboresperu.restaurante.controller;
 
+import com.saboresperu.restaurante.domain.PermissionModes;
 import com.saboresperu.restaurante.dto.UserAdminFormDto;
 import com.saboresperu.restaurante.entity.User;
 import com.saboresperu.restaurante.repository.BranchRepository;
@@ -44,7 +45,10 @@ public class AdminUserController {
     public String createForm(Model model) {
         model.addAttribute("titulo", "Nuevo usuario");
         model.addAttribute("form", new UserAdminFormDto(
-                null, null, null, null, null, null, true, new HashSet<>(), null, null, null, null));
+                null, null, null, null, null, null,
+                true, new HashSet<>(), null, null,
+                PermissionModes.INHERIT, Set.of()
+        ));
         addCatalogs(model);
         return "admin/users/form";
     }

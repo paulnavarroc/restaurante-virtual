@@ -65,7 +65,7 @@ public class CustomerController {
     @GetMapping("/addresses/new")
     public String newAddress(Model model) {
         model.addAttribute("titulo", "Nueva dirección");
-        model.addAttribute("form", new AddressFormDto(null, null, null, null, null, null, null, null, null));
+        model.addAttribute("form", new AddressFormDto(null, null, null, null, null, null, null));
         return "customer/address-form";
     }
 

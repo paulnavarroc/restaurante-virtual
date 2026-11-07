@@ -3,6 +3,8 @@ package com.saboresperu.restaurante.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "UserPermissionOverrides")
 @Getter
@@ -10,26 +12,35 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@IdClass(UserPermissionOverrideId.class)
+@IdClass(UserPermissionOverride.Pk.class)
 public class UserPermissionOverride {
 
     @Id
-    @Column(name = "IdUser")
+    @Column(name = "IdUser", nullable = false)
     private Integer userId;
 
     @Id
-    @Column(name = "IdPermission")
+    @Column(name = "IdPermission", nullable = false)
     private Integer permissionId;
 
-    /** ALLOW | DENY */
     @Column(name = "Effect", nullable = false, length = 10)
-    private String effect;
+    private String effect; // ALLOW | DENY
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdPermission", insertable = false, updatable = false)
+    private Permission permission;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdUser", insertable = false, updatable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "IdPermission", insertable = false, updatable = false)
-    private Permission permission;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @EqualsAndHashCode
+    public static class Pk implements Serializable {
+        private Integer userId;
+        private Integer permissionId;
+    }
 }

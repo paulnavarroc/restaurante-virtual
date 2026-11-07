@@ -11,10 +11,10 @@ import java.util.List;
 public interface UserPermissionOverrideRepository extends JpaRepository<UserPermissionOverride, UserPermissionOverrideId> {
 
     @Query("""
-           SELECT o FROM UserPermissionOverride o
-           JOIN FETCH o.permission
-           WHERE o.userId = :userId
-           """)
+       SELECT o FROM UserPermissionOverride o
+       JOIN FETCH o.permission
+       WHERE o.userId = :userId
+       """)
     List<UserPermissionOverride> findByUserIdWithPermission(@Param("userId") Integer userId);
 
     void deleteByUserId(Integer userId);

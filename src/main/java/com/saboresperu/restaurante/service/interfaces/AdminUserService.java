@@ -6,7 +6,6 @@ import com.saboresperu.restaurante.dto.UserAdminFormDto;
 import com.saboresperu.restaurante.dto.UserAdminRowDto;
 
 import java.util.List;
-import java.util.Set;
 
 public interface AdminUserService {
     List<UserAdminRowDto> search(String query);
@@ -16,6 +15,4 @@ public interface AdminUserService {
     void setActive(Integer id, boolean active);
     List<RoleOptionDto> listRoles();
     EffectivePermissionPreviewDto previewEffective(Integer userId);
-    Set<String> resolveRolePermissionCodes(Integer userId); // sin capa usuario
-    Set<String> resolvePermissionCodes(Integer userId);     // completo
 }

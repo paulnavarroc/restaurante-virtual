@@ -23,6 +23,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
 
+    private static final String ROLE_ADMINISTRATOR = "ADMINISTRATOR";
+    private static final String ROLE_CHEF = "CHEF";
+    private static final String ROLE_COURIER = "COURIER";
+    private static final String ROLE_CUSTOMER = "CUSTOMER";
+
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final BranchRepository branchRepository;
@@ -36,91 +41,9 @@ public class AdminUserServiceImpl implements AdminUserService {
     private final EffectivePermissionService effectivePermissionService;
     private final SecurityConfigService securityConfigService;
 
-    private void syncUserPermissions(Integer userId, String mode, Set<String> overrides) {
-        String resolvedMode = mode == null || mode.isBlank()
-                ? PermissionModes.INHERIT : mode.trim().toUpperCase();
-
-        if (!Set.of(PermissionModes.INHERIT, PermissionModes.RESTRICT, PermissionModes.CUSTOM)
-                .contains(resolvedMode)) {
-            throw new IllegalArgumentException("Modo de permisos no válido");
-        }
-
-        UserPermissionConfig cfg = userPermissionConfigRepository.findByUserId(userId)
-                .orElseGet(() -> UserPermissionConfig.builder()
-                        .userId(userId)
-                        .build());
-        cfg.setMode(resolvedMode);
-        userPermissionConfigRepository.save(cfg);
-
-        userPermissionOverrideRepository.deleteByUserId(userId);
-
-        if (PermissionModes.INHERIT.equals(resolvedMode)) {
-            return; // sin overrides
-        }
-
-        if (overrides != null) {
-            for (String token : overrides) {
-                String[] parts = token.split(":", 2);
-                if (parts.length != 2) continue;
-                String effect = parts[0].trim().toUpperCase();
-                String code = parts[1].trim();
-                if (!"ALLOW".equals(effect) && !"DENY".equals(effect)) continue;
-
-                Permission perm = permissionRepository.findByCode(code)
-                        .orElseThrow(() -> new IllegalArgumentException("Permiso: " + code));
-
-                userPermissionOverrideRepository.save(UserPermissionOverride.builder()
-                        .userId(userId)
-                        .permissionId(perm.getId())
-                        .effect(effect)
-                        .build());
-            }
-        }
-
-        if (PermissionModes.CUSTOM.equals(resolvedMode)
-                && (overrides == null || overrides.isEmpty())) {
-            throw new IllegalArgumentException(
-                    "El modo Personalizado requiere al menos un permiso ALLOW");
-        }
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public EffectivePermissionPreviewDto previewEffective(Integer userId) {
-        User user = userRepository.findByIdWithRoles(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-
-        String mode = userPermissionConfigRepository.findByUserId(userId)
-                .map(UserPermissionConfig::getMode)
-                .orElse(PermissionModes.INHERIT);
-
-        // Solo roles (sin overrides de usuario) — método auxiliar en EffectivePermissionService
-        Set<String> fromRoles = effectivePermissionService.resolveRolePermissionCodes(userId);
-
-        List<UserPermissionOverride> overs =
-                userPermissionOverrideRepository.findByUserId(userId);
-
-        List<String> allows = overs.stream()
-                .filter(o -> "ALLOW".equals(o.getEffect()))
-                .map(o -> o.getPermission().getCode())
-                .sorted()
-                .toList();
-        List<String> denies = overs.stream()
-                .filter(o -> "DENY".equals(o.getEffect()))
-                .map(o -> o.getPermission().getCode())
-                .sorted()
-                .toList();
-
-        Set<String> effective = effectivePermissionService.resolvePermissionCodes(userId);
-
-        return new EffectivePermissionPreviewDto(
-                mode,
-                fromRoles.stream().sorted().toList(),
-                allows,
-                denies,
-                effective.stream().sorted().toList()
-        );
-    }
+    // -------------------------------------------------------------------------
+    // AdminUserService
+    // -------------------------------------------------------------------------
 
     @Override
     @Transactional(readOnly = true)
@@ -129,16 +52,18 @@ public class AdminUserServiceImpl implements AdminUserService {
                 ? userRepository.findAllWithRoles()
                 : userRepository.searchWithRoles(query.trim());
 
-        return users.stream().map(u -> new UserAdminRowDto(
-                u.getId(),
-                (u.getFirstName() + " " + u.getLastName()).trim(),
-                u.getEmail(),
-                u.getPhone(),
-                Boolean.TRUE.equals(u.getIsActive()),
-                u.getRoles().stream().map(Role::getName).sorted().toList(),
-                u.getCreatedAt(),
-                u.getLastAccessAt()
-        )).toList();
+        return users.stream()
+                .map(u -> new UserAdminRowDto(
+                        u.getId(),
+                        (u.getFirstName() + " " + u.getLastName()).trim(),
+                        u.getEmail(),
+                        u.getPhone(),
+                        Boolean.TRUE.equals(u.getIsActive()),
+                        u.getRoles().stream().map(Role::getName).sorted().toList(),
+                        u.getCreatedAt(),
+                        u.getLastAccessAt()
+                ))
+                .toList();
     }
 
     @Override
@@ -148,13 +73,27 @@ public class AdminUserServiceImpl implements AdminUserService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         Integer kitchenBranchId = kitchenStaffRepository.findByUserId(id)
-                .map(k -> k.getBranch().getId())
-                .orElse(null);
-        Integer courierBranchId = courierRepository.findByUserId(id)
-                .map(c -> c.getBranch().getId())
+                .map(k -> k.getBranch() != null ? k.getBranch().getId() : null)
                 .orElse(null);
 
-        Set<Integer> roleIds = u.getRoles().stream().map(Role::getId).collect(Collectors.toSet());
+        Integer courierBranchId = courierRepository.findByUserId(id)
+                .map(c -> c.getBranch() != null ? c.getBranch().getId() : null)
+                .orElse(null);
+
+        Set<Integer> roleIds = u.getRoles().stream()
+                .map(Role::getId)
+                .collect(Collectors.toSet());
+
+        String mode = userPermissionConfigRepository.findByUserId(id)
+                .map(UserPermissionConfig::getPermissionMode)
+                .orElse(PermissionModes.INHERIT);
+
+        Set<String> overrides = userPermissionOverrideRepository
+                .findByUserIdWithPermission(id)
+                .stream()
+                .filter(o -> o.getPermission() != null && o.getPermission().getCode() != null)
+                .map(o -> o.getEffect() + ":" + o.getPermission().getCode())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         return new UserAdminFormDto(
                 u.getId(),
@@ -166,7 +105,9 @@ public class AdminUserServiceImpl implements AdminUserService {
                 Boolean.TRUE.equals(u.getIsActive()),
                 roleIds,
                 kitchenBranchId,
-                courierBranchId
+                courierBranchId,
+                mode,
+                overrides
         );
     }
 
@@ -182,6 +123,7 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
 
         Set<Role> roles = resolveRoles(form.roleIds());
+
         User user = User.builder()
                 .firstName(form.firstName().trim())
                 .lastName(form.lastName().trim())
@@ -196,9 +138,10 @@ public class AdminUserServiceImpl implements AdminUserService {
 
         syncStaffProfiles(user, roles, form.kitchenBranchId(), form.courierBranchId());
         ensureCustomerIfNeeded(user, roles);
+        syncUserPermissions(user, form.permissionMode(), form.permissionOverrides());
 
-        syncUserPermissions(user.getId(), form.permissionMode(), form.permissionOverrides());
-        securityConfigService.bumpSecurityVersion(actorUserId, "User permissions: " + user.getEmail());
+        securityConfigService.bumpSecurityVersion(
+                actorUserId, "User created: " + user.getEmail());
 
         return user.getId();
     }
@@ -216,6 +159,9 @@ public class AdminUserServiceImpl implements AdminUserService {
             }
         });
 
+        Set<Role> newRoles = resolveRoles(form.roleIds());
+        assertNotRemovingLastAdministrator(user, newRoles, form.active());
+
         user.setFirstName(form.firstName().trim());
         user.setLastName(form.lastName().trim());
         user.setEmail(email);
@@ -226,31 +172,15 @@ public class AdminUserServiceImpl implements AdminUserService {
             user.setPasswordHash(passwordEncoder.encode(form.password()));
         }
 
-        Set<Role> roles = resolveRoles(form.roleIds());
-
-        boolean willBeAdmin = roles.stream().anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
-        boolean wasAdmin = user.getRoles().stream().anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
-        if (wasAdmin && !willBeAdmin) {
-            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
-            if (remaining == 0) {
-                throw new IllegalArgumentException("Debe existir al menos un ADMINISTRADOR activo");
-            }
-        }
-        if (wasAdmin && !form.active()) {
-            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
-            if (remaining == 0) {
-                throw new IllegalArgumentException("No puedes desactivar el último ADMINISTRADOR");
-            }
-        }
-
-        user.setRoles(roles);
+        user.setRoles(newRoles);
         userRepository.save(user);
 
-        syncStaffProfiles(user, roles, form.kitchenBranchId(), form.courierBranchId());
-        ensureCustomerIfNeeded(user, roles);
+        syncStaffProfiles(user, newRoles, form.kitchenBranchId(), form.courierBranchId());
+        ensureCustomerIfNeeded(user, newRoles);
+        syncUserPermissions(user, form.permissionMode(), form.permissionOverrides());
 
-        syncUserPermissions(user.getId(), form.permissionMode(), form.permissionOverrides());
-        securityConfigService.bumpSecurityVersion(actorUserId, "User permissions: " + user.getEmail());
+        securityConfigService.bumpSecurityVersion(
+                actorUserId, "User updated: " + user.getEmail());
     }
 
     @Override
@@ -259,21 +189,24 @@ public class AdminUserServiceImpl implements AdminUserService {
         User user = userRepository.findByIdWithRoles(id)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        boolean isAdmin = user.getRoles().stream()
-                .anyMatch(r -> "ADMINISTRATOR".equals(r.getName()));
-        if (isAdmin && !active) {
-            long remaining = userRepository.countActiveByRoleNameExcluding("ADMINISTRATOR", id);
-            if (remaining == 0) {
-                throw new IllegalArgumentException(
-                        "No puedes desactivar el último ADMINISTRADOR");
+        if (!active) {
+            boolean isAdmin = user.getRoles().stream()
+                    .anyMatch(r -> ROLE_ADMINISTRATOR.equals(r.getName()));
+            if (isAdmin) {
+                long remaining = userRepository
+                        .countActiveByRoleNameExcluding(ROLE_ADMINISTRATOR, id);
+                if (remaining == 0) {
+                    throw new IllegalArgumentException(
+                            "No puedes desactivar el último ADMINISTRADOR");
+                }
             }
         }
 
         user.setIsActive(active);
         userRepository.save(user);
-        if (!active) {
-            securityConfigService.bumpSecurityVersion(null, "User deactivated: " + user.getEmail());
-        }
+
+        securityConfigService.bumpSecurityVersion(
+                null, "User active=" + active + ": " + user.getEmail());
     }
 
     @Override
@@ -282,6 +215,117 @@ public class AdminUserServiceImpl implements AdminUserService {
         return roleRepository.findByIsActiveTrue().stream()
                 .map(r -> new RoleOptionDto(r.getId(), r.getName(), r.getDescription()))
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public EffectivePermissionPreviewDto previewEffective(Integer userId) {
+        if (userRepository.findById(userId).isEmpty()) {
+            throw new IllegalArgumentException("Usuario no encontrado");
+        }
+
+        String mode = userPermissionConfigRepository.findByUserId(userId)
+                .map(UserPermissionConfig::getPermissionMode)
+                .orElse(PermissionModes.INHERIT);
+
+        Set<String> fromRoles = effectivePermissionService.resolveRolePermissionCodes(userId);
+
+        List<UserPermissionOverride> overs =
+                userPermissionOverrideRepository.findByUserIdWithPermission(userId);
+
+        List<String> allows = overs.stream()
+                .filter(o -> "ALLOW".equalsIgnoreCase(o.getEffect()))
+                .map(o -> o.getPermission() != null ? o.getPermission().getCode() : null)
+                .filter(Objects::nonNull)
+                .sorted()
+                .toList();
+
+        List<String> denies = overs.stream()
+                .filter(o -> "DENY".equalsIgnoreCase(o.getEffect()))
+                .map(o -> o.getPermission() != null ? o.getPermission().getCode() : null)
+                .filter(Objects::nonNull)
+                .sorted()
+                .toList();
+
+        Set<String> effective = effectivePermissionService.resolvePermissionCodes(userId);
+
+        return new EffectivePermissionPreviewDto(
+                mode,
+                fromRoles.stream().sorted().toList(),
+                allows,
+                denies,
+                effective.stream().sorted().toList()
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Private
+    // -------------------------------------------------------------------------
+
+    private void syncUserPermissions(User user, String mode, Set<String> overrides) {
+        Integer userId = user.getId();
+
+        String resolvedMode = mode == null || mode.isBlank()
+                ? PermissionModes.INHERIT
+                : mode.trim().toUpperCase();
+
+        if (!Set.of(PermissionModes.INHERIT, PermissionModes.RESTRICT, PermissionModes.CUSTOM)
+                .contains(resolvedMode)) {
+            throw new IllegalArgumentException("Modo de permisos no válido");
+        }
+
+        UserPermissionConfig cfg = userPermissionConfigRepository.findByUserId(userId)
+                .orElseGet(() -> UserPermissionConfig.builder()
+                        .user(user)
+                        .permissionMode(PermissionModes.INHERIT)
+                        .updatedAt(LocalDateTime.now())
+                        .build());
+
+        cfg.setPermissionMode(resolvedMode);
+        cfg.setUpdatedAt(LocalDateTime.now());
+        userPermissionConfigRepository.save(cfg);
+
+        userPermissionOverrideRepository.deleteByUserId(userId);
+
+        if (PermissionModes.INHERIT.equals(resolvedMode)) {
+            return;
+        }
+
+        boolean hasAllow = false;
+        if (overrides != null) {
+            for (String token : overrides) {
+                if (token == null || token.isBlank()) {
+                    continue;
+                }
+                String[] parts = token.split(":", 2);
+                if (parts.length != 2) {
+                    continue;
+                }
+                String effect = parts[0].trim().toUpperCase();
+                String code = parts[1].trim();
+                if (!"ALLOW".equals(effect) && !"DENY".equals(effect)) {
+                    continue;
+                }
+
+                Permission perm = permissionRepository.findByCode(code)
+                        .orElseThrow(() -> new IllegalArgumentException("Permiso: " + code));
+
+                userPermissionOverrideRepository.save(UserPermissionOverride.builder()
+                        .userId(userId)
+                        .permissionId(perm.getId())
+                        .effect(effect)
+                        .build());
+
+                if ("ALLOW".equals(effect)) {
+                    hasAllow = true;
+                }
+            }
+        }
+
+        if (PermissionModes.CUSTOM.equals(resolvedMode) && !hasAllow) {
+            throw new IllegalArgumentException(
+                    "El modo Personalizado requiere al menos un permiso ALLOW");
+        }
     }
 
     private Set<Role> resolveRoles(Set<Integer> roleIds) {
@@ -300,10 +344,30 @@ public class AdminUserServiceImpl implements AdminUserService {
         return roles;
     }
 
+    private void assertNotRemovingLastAdministrator(User user, Set<Role> newRoles, boolean active) {
+        boolean wasAdmin = user.getRoles().stream()
+                .anyMatch(r -> ROLE_ADMINISTRATOR.equals(r.getName()));
+        if (!wasAdmin) {
+            return;
+        }
+
+        boolean willBeAdmin = newRoles.stream()
+                .anyMatch(r -> ROLE_ADMINISTRATOR.equals(r.getName()));
+
+        if (!willBeAdmin || !active) {
+            long remaining = userRepository
+                    .countActiveByRoleNameExcluding(ROLE_ADMINISTRATOR, user.getId());
+            if (remaining == 0) {
+                throw new IllegalArgumentException(
+                        "Debe existir al menos un ADMINISTRADOR activo");
+            }
+        }
+    }
+
     private void syncStaffProfiles(User user, Set<Role> roles,
                                    Integer kitchenBranchId, Integer courierBranchId) {
-        boolean isChef = roles.stream().anyMatch(r -> "CHEF".equals(r.getName()));
-        boolean isCourier = roles.stream().anyMatch(r -> "COURIER".equals(r.getName()));
+        boolean isChef = roles.stream().anyMatch(r -> ROLE_CHEF.equals(r.getName()));
+        boolean isCourier = roles.stream().anyMatch(r -> ROLE_COURIER.equals(r.getName()));
 
         if (isChef) {
             if (kitchenBranchId == null) {
@@ -357,7 +421,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     }
 
     private void ensureCustomerIfNeeded(User user, Set<Role> roles) {
-        boolean isCustomer = roles.stream().anyMatch(r -> "CUSTOMER".equals(r.getName()));
+        boolean isCustomer = roles.stream().anyMatch(r -> ROLE_CUSTOMER.equals(r.getName()));
         if (!isCustomer) {
             return;
         }
