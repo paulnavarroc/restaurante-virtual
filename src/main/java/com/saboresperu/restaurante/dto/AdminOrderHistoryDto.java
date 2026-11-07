@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.dto;
+package com.saboresperu.restaurante.dto;
 
 public record AdminOrderHistoryDto(
         String statusName,

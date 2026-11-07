@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.service.impl;
+package com.saboresperu.restaurante.service.impl;
 
 import com.saboresperu.restaurante.domain.PermissionEffects;
 import com.saboresperu.restaurante.domain.PermissionModes;

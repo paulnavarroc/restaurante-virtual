@@ -142,25 +142,17 @@ java -version
 
 ## Base de datos
 
-### 1. Crear la base
+1. Crear/recrear con `scripts/V1__schema.sql`
+2. Seguridad y menús: `scripts/V1_1__seed_security.sql`
+3. Demo negocio (opcional): `scripts/V1_2__seed_demo.sql`
 
-```sql
-CREATE DATABASE SaboresPeru;
-```
+Convención de permisos:
+- Columna `Permissions.Code` sin prefijo (ej. `ORDERS_VIEW`)
+- Authority Spring: `PERM_ORDERS_VIEW`
 
-### 2. Ejecutar scripts (orden)
+Roles: `ADMINISTRATOR`, `CUSTOMER`, `CHEF`, `COURIER`, `OPERATIONS`, …
 
-1. `scripts/V1__schema.sql` — tablas, FKs, índices, catálogos base (roles, estados, métodos de pago, regiones, categorías).
-
-
-### 3. Verificar
-
-```sql
-USE SaboresPeru;
-SELECT name FROM sys.tables ORDER BY name;
-SELECT * FROM dbo.Sedes;
-SELECT * FROM dbo.UbigeoDistritos;
-```
+Rutas app: `/admin/**`, `/customer/**`, `/kitchen/**`, `/courier/**`, `/menu`
 
 ---
 

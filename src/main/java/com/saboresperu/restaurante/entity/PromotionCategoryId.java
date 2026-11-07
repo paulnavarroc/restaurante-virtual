@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.entity;
+package com.saboresperu.restaurante.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

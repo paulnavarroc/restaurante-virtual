@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.dto;
+package com.saboresperu.restaurante.dto;
 
 import java.math.BigDecimal;
 import java.util.List;

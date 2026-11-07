@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.repository;
+package com.saboresperu.restaurante.repository;
 
 import com.saboresperu.restaurante.entity.RolePermission;
 import com.saboresperu.restaurante.entity.RolePermissionId;

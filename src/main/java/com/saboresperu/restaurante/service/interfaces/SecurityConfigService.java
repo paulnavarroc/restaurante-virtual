@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.service.interfaces;
+package com.saboresperu.restaurante.service.interfaces;
 
 public interface SecurityConfigService {
     long currentVersion();

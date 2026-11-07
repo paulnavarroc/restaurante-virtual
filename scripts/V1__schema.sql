@@ -1,6 +1,6 @@
 /*
-  Sabores Perú – Schema v3 (English, PascalCase)
-  SQL Server – create from scratch
+  Sabores PerÃº â€“ Schema v3 (English, PascalCase)
+  SQL Server â€“ create from scratch
 */
 USE master;
 GO
@@ -19,7 +19,7 @@ SET QUOTED_IDENTIFIER ON;
 GO
 
 /* =========================================================
-   1. Security – users & roles
+   1. Security â€“ users & roles
    ========================================================= */
 
 CREATE TABLE dbo.Roles (
@@ -660,7 +660,7 @@ CREATE TABLE dbo.Deliveries (
 GO
 
 /* =========================================================
-   9. ACL – permissions, groups, menus
+   9. ACL â€“ permissions, groups, menus
    ========================================================= */
 
 CREATE TABLE dbo.Permissions (
@@ -810,7 +810,7 @@ CREATE INDEX IX_Promotions_Active_Dates ON dbo.Promotions(IsActive, StartsAt, En
 CREATE INDEX IX_DailyMenus_Branch_Date ON dbo.DailyMenus(IdBranch, MenuDate);
 
 /* =========================================================
-   10. Seed – roles & order statuses (minimum)
+   10. Seed â€“ roles & order statuses (minimum)
    ========================================================= */
 
 INSERT INTO dbo.Roles (Name, Description) VALUES

@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.controller;
+package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.domain.PromoScopes;
 import com.saboresperu.restaurante.domain.PromoTypes;

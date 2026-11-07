@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.domain;
+package com.saboresperu.restaurante.domain;
 
 public final class PromoScopes {
     public static final String PRODUCT = "PRODUCT";

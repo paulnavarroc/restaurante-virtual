@@ -34,6 +34,38 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     @Transactional(readOnly = true)
+    public DashboardKpiDto getTodayKpis() {
+        LocalDateTime from = LocalDate.now().atStartOfDay();
+        LocalDateTime to = LocalDate.now().atTime(LocalTime.MAX);
+
+        long ordersToday = orderRepository.countByOrderedAtBetween(from, to);
+        BigDecimal salesToday = orderRepository.sumTotalByOrderedAtBetween(from, to);
+        if (salesToday == null) {
+            salesToday = BigDecimal.ZERO;
+        }
+        long pending = orderRepository.countByStatusCode("PENDING");
+
+        List<RecentOrderDto> recent = orderRepository
+                .findRecentWithStatus(PageRequest.of(0, 8))
+                .stream()
+                .map(o -> new RecentOrderDto(
+                        o.getId(),
+                        o.getOrderStatus() != null ? o.getOrderStatus().getName() : "—",
+                        "",
+                        o.getTotal(),
+                        o.getCustomer() != null && o.getCustomer().getUser() != null
+                                ? (o.getCustomer().getUser().getFirstName() + " "
+                        + o.getCustomer().getUser().getLastName()).trim()
+                                : "—",
+                        o.getOrderedAt() != null ? o.getOrderedAt().format(FMT) : "—"
+                ))
+                .toList();
+
+        return new DashboardKpiDto(ordersToday, 0, 0, salesToday, pending, 0L, recent);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public DashboardKpiDto getKpis() {
         LocalDate today = LocalDate.now();
         LocalDateTime start = today.atStartOfDay();
@@ -75,6 +107,7 @@ public class DashboardServiceImpl implements DashboardService {
                 recent
         );
     }
+
 
     private RecentOrderDto toRecent(Order o) {
         User u = o.getCustomer() != null ? o.getCustomer().getUser() : null;

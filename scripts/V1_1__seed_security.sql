@@ -1,4 +1,4 @@
-﻿/*
+/*
   Sabores Peru – V1_1 seed security & base catalogs
   Run after V1__schema.sql
 */

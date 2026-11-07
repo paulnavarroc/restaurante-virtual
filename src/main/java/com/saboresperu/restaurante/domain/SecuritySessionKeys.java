@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.domain;
+package com.saboresperu.restaurante.domain;
 
 public final class SecuritySessionKeys {
     public static final String SECURITY_VERSION = "SECURITY_VERSION";

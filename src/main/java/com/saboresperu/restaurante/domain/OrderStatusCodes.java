@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.domain;
+package com.saboresperu.restaurante.domain;
 
 public final class OrderStatusCodes {
     public static final String PENDING = "PENDING";

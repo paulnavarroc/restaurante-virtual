@@ -15,11 +15,11 @@ public class AdminDashboardController {
 
     private final DashboardService dashboardService;
 
-    @GetMapping({"", "/", "/dashboard"})
+    @GetMapping({ "", "/", "/dashboard" })
     @PreAuthorize("hasAuthority('PERM_DASHBOARD_VIEW')")
     public String dashboard(Model model) {
-        model.addAttribute("titulo", "Dashboard");
-        model.addAttribute("kpi", dashboardService.getKpis());
+        model.addAttribute("titulo", "Panel de control");
+        model.addAttribute("kpi", dashboardService.getTodayKpis());
         return "admin/dashboard";
     }
 }

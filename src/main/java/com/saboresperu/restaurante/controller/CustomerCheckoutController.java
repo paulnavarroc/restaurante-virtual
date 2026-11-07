@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.controller;
+package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.CheckoutPreviewDto;
 import com.saboresperu.restaurante.dto.CheckoutRequestDto;

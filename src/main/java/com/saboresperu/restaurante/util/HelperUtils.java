@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.util;
+package com.saboresperu.restaurante.util;
 
 public class HelperUtils {
     public static String shiftLabel(String code) {

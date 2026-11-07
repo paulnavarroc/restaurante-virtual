@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.repository;
+package com.saboresperu.restaurante.repository;
 
 import com.saboresperu.restaurante.entity.Order;
 import org.springframework.data.domain.Pageable;
@@ -105,4 +105,26 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
        ORDER BY o.orderedAt DESC
        """)
     List<Order> findRecentByCustomerId(@Param("customerId") Integer customerId, Pageable pageable);
+
+    long countByOrderedAtBetween(LocalDateTime from, LocalDateTime to);
+
+    @Query("""
+       SELECT COALESCE(SUM(o.total), 0) FROM Order o
+       WHERE o.orderedAt >= :from AND o.orderedAt <= :to
+         AND o.orderStatus.code <> 'CANCELLED'
+       """)
+    BigDecimal sumTotalByOrderedAtBetween(@Param("from") LocalDateTime from,
+                                          @Param("to") LocalDateTime to);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus.code = :code")
+    long countByStatusCode(@Param("code") String code);
+
+    @Query("""
+       SELECT o FROM Order o
+       JOIN FETCH o.orderStatus
+       JOIN FETCH o.customer c
+       JOIN FETCH c.user
+       ORDER BY o.orderedAt DESC
+       """)
+    List<Order> findRecentWithStatus(Pageable pageable);
 }

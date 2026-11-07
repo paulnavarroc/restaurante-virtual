@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.domain;
+package com.saboresperu.restaurante.domain;
 
 public final class StockReservationStatuses {
     public static final String RESERVED = "RESERVED";

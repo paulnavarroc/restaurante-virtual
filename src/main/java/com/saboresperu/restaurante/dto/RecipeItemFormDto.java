@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.dto;
+package com.saboresperu.restaurante.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;

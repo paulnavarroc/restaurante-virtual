@@ -1,4 +1,4 @@
-﻿package com.saboresperu.restaurante.repository;
+package com.saboresperu.restaurante.repository;
 
 import com.saboresperu.restaurante.entity.IngredientStock;
 import org.springframework.data.jpa.repository.JpaRepository;
