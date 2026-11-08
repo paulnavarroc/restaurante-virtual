@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface PermissionRepository extends JpaRepository<Permission, Integer> {
     Optional<Permission> findByCode(String code);
+    List<Permission> findAllByOrderByModuleAscCodeAsc();
     List<Permission> findByIsActiveTrueOrderByModuleAscCodeAsc();
     List<Permission> findByModuleOrderByCodeAsc(String module);
 }

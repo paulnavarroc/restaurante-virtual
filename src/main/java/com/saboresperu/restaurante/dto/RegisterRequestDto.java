@@ -26,5 +26,8 @@ public record RegisterRequestDto(
         String password,
 
         @NotBlank(message = "Confirma la contraseña")
-        String passwordConfirm
+        String passwordConfirm,
+
+        @Size(max = 30)
+        String documentNumber
 ) {}

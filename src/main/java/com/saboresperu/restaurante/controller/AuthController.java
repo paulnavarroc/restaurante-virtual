@@ -52,7 +52,7 @@ public class AuthController {
             return "redirect:/";
         }
         if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new RegisterRequestDto(null, null, null, null, null, null));
+            model.addAttribute("form", new RegisterRequestDto(null, null, null, null, null, null, null));
         }
         model.addAttribute("titulo", "Crear cuenta");
         return "auth/register";

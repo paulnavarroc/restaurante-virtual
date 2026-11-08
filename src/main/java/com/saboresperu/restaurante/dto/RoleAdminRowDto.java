@@ -5,6 +5,6 @@ public record RoleAdminRowDto(
         String name,
         String description,
         boolean active,
-        int groupCount,
-        int userCount
+        long groupCount,
+        long userCount
 ) {}

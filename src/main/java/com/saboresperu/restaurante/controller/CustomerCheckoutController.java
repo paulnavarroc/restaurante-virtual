@@ -17,6 +17,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.net.URLEncoder;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 @Controller
 @RequestMapping("/customer")
 @RequiredArgsConstructor

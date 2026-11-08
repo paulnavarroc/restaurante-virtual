@@ -1,8 +1,10 @@
 package com.saboresperu.restaurante.service.impl;
 
 import com.saboresperu.restaurante.domain.OrderStatusCodes;
+import com.saboresperu.restaurante.domain.StockReservationStatuses;
 import com.saboresperu.restaurante.entity.*;
 import com.saboresperu.restaurante.repository.*;
+import com.saboresperu.restaurante.service.interfaces.DeliveryService;
 import com.saboresperu.restaurante.service.interfaces.KitchenOrderService;
 import com.saboresperu.restaurante.service.interfaces.StockService;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,9 @@ public class KitchenOrderServiceImpl implements KitchenOrderService {
     private final OrderHistoryRepository orderHistoryRepository;
     private final UserRepository userRepository;
     private final StockService stockService;
-    private final Object deliveryService;
+    private final DeliveryService deliveryService;
+    private final OrderStockReservationRepository reservationRepository;
+
 
     @Override
     @Transactional(readOnly = true)
@@ -80,8 +84,6 @@ public class KitchenOrderServiceImpl implements KitchenOrderService {
         return !reservationRepository.findByOrderIdAndStatus(
                 orderId, StockReservationStatuses.RESERVED).isEmpty();
     }
-
-    // inject OrderStockReservationRepository reservationRepository
 
     private void validateTransition(String from, String to) {
         boolean ok = switch (from) {
