@@ -46,6 +46,13 @@ public class DevUserSeed implements CommandLineRunner {
     public void run(String... args) {
         log.info("=== DevUserSeed ===");
 
+        long numUsers = userRepository.count();
+
+        if (numUsers > 0){
+            log.info("Total Users: {}", numUsers );
+            return;
+        }
+
         User admin = ensureUser("admin@saboresperu.com", "Carlos", "Admin", "999000001", "ADMINISTRATOR");
         ensureUser("ops@saboresperu.com", "Lucia", "Operations", "999000002", "OPERATIONS");
         User chef = ensureUser("cocina@saboresperu.com", "Marco", "Chef", "999000003", "CHEF");

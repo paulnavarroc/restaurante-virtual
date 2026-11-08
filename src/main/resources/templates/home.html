@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/base}"
@@ -55,7 +55,7 @@
           <p class="mt-1 line-clamp-2 text-sm text-slate-500" th:text="${p.description}">Desc</p>
           <div class="mt-auto flex items-center justify-between pt-4">
                         <span class="text-lg font-bold text-slate-900"
-                              th:text="${'S/ ' + #numbers.formatDecimal(p.basePrice, 1, 2)}">S/ 0.00</span>
+                              th:text="${'S/ ' + #numbers.formatDecimal(p.salePrice(), 1, 2)}">S/ 0.00</span>
             <a th:href="@{/menu}" class="text-sm font-medium text-sky-600 hover:underline">Ver menú</a>
           </div>
         </div>

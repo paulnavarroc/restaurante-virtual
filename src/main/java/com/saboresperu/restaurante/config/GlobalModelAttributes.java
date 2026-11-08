@@ -7,12 +7,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import lombok.RequiredArgsConstructor;
 
-import java.util.Collections;
 import java.util.List;
 
 @ControllerAdvice
+@RequiredArgsConstructor
 public class GlobalModelAttributes {
+
+    private final CartService cartService;
 
     @ModelAttribute("currentUri")
     public String currentUri(HttpServletRequest request) {
@@ -45,7 +48,7 @@ public class GlobalModelAttributes {
     }
 
     @ModelAttribute("cartCount")
-    public int cartCount(HttpSession session, CartService cartService) {
+    public int cartCount(HttpSession session) {
         if (session == null) return 0;
         return cartService.countItems(session);
     }

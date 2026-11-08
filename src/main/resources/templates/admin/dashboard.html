@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       layout:decorate="~{layout/admin}" lang="es">
@@ -28,7 +28,7 @@
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Pendientes</p>
             <p class="mt-2 text-3xl font-bold text-amber-600"
-               th:text="${kpi != null ? kpi.pendingOrders() : 0}">0</p>
+               th:text="${kpi != null ? kpi.ordersPendingKitchen() : 0}">0</p>
         </div>
         <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Stock bajo</p>

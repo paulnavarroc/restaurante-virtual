@@ -48,12 +48,6 @@ public class CustomerController {
         return "customer/order-detail";
     }
 
-    @GetMapping("/cart")
-    public String cart(Model model) {
-        model.addAttribute("titulo", "Carrito");
-        return "customer/cart";
-    }
-
     @GetMapping("/addresses")
     public String addresses(Model model) {
         Customer customer = currentCustomer();
