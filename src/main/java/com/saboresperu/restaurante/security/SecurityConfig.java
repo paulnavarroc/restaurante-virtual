@@ -67,6 +67,7 @@ public class SecurityConfig {
                         .hasAnyRole("COURIER", "ADMINISTRATOR", "MANAGER")
                         .requestMatchers("/customer/**")
                         .hasAnyRole("CUSTOMER", "ADMINISTRATOR")
+                        .requestMatchers("/api/geo/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

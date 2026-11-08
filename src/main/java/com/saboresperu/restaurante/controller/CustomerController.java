@@ -3,6 +3,7 @@ package com.saboresperu.restaurante.controller;
 import com.saboresperu.restaurante.dto.AddressFormDto;
 import com.saboresperu.restaurante.entity.Customer;
 import com.saboresperu.restaurante.entity.Order;
+import com.saboresperu.restaurante.repository.GeoDepartmentRepository;
 import com.saboresperu.restaurante.repository.PaymentRepository;
 import com.saboresperu.restaurante.service.interfaces.*;
 import com.saboresperu.restaurante.util.SecurityUtils;
@@ -25,6 +26,7 @@ public class CustomerController {
     private final AddressService addressService;
     private final SecurityUtils securityUtils;
     private final PaymentRepository paymentRepository;
+    private final GeoDepartmentRepository geoDepartmentRepository;
 
     private Customer currentCustomer() {
         return customerService.requireByUserEmail(securityUtils.currentEmail());
@@ -60,6 +62,7 @@ public class CustomerController {
     public String newAddress(Model model) {
         model.addAttribute("titulo", "Nueva dirección");
         model.addAttribute("form", new AddressFormDto(null, null, null, null, null, null, null));
+        model.addAttribute("departments", geoDepartmentRepository.findAllByOrderByNameAsc());
         return "customer/address-form";
     }
 
@@ -70,13 +73,21 @@ public class CustomerController {
                                 Model model) {
         if (result.hasErrors()) {
             model.addAttribute("titulo", "Nueva dirección");
+            model.addAttribute("departments", geoDepartmentRepository.findAllByOrderByNameAsc());
             return "customer/address-form";
         }
-        addressService.create(currentCustomer().getId(), form);
-        ra.addFlashAttribute("mensaje", "Dirección agregada");
-        return "redirect:/customer/addresses";
+        try {
+            addressService.create(currentCustomer().getId(), form);
+            ra.addFlashAttribute("mensaje", "Dirección agregada");
+            return "redirect:/customer/addresses";
+        } catch (RuntimeException ex) {
+            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("titulo", "Nueva dirección");
+            model.addAttribute("departments", geoDepartmentRepository.findAllByOrderByNameAsc());
+            return "customer/address-form";
+        }
     }
-
+    
     @PostMapping("/addresses/{id}/primary")
     public String markPrimary(@PathVariable Integer id, RedirectAttributes ra) {
         addressService.markAsPrimary(id, currentCustomer().getId());

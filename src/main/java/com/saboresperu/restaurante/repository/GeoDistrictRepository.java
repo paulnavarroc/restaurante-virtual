@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface GeoDistrictRepository extends JpaRepository<GeoDistrict, String> {
     List<GeoDistrict> findByProvinceId(String provinceId);
 
+    List<GeoDistrict> findByProvinceIdOrderByNameAsc(String provinceId);
+    
     @Query("""
            SELECT d FROM GeoDistrict d
            JOIN FETCH d.province p
