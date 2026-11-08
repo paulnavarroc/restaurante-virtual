@@ -77,6 +77,20 @@ public class CustomerController {
         return "redirect:/customer/addresses";
     }
 
+    @PostMapping("/addresses/{id}/primary")
+    public String markPrimary(@PathVariable Integer id, RedirectAttributes ra) {
+        addressService.markAsPrimary(id, currentCustomer().getId());
+        ra.addFlashAttribute("mensaje", "Dirección marcada como principal");
+        return "redirect:/customer/addresses";
+    }
+
+    @PostMapping("/addresses/{id}/delete")
+    public String deleteAddress(@PathVariable Integer id, RedirectAttributes ra) {
+        addressService.delete(id, currentCustomer().getId());
+        ra.addFlashAttribute("mensaje", "Dirección eliminada");
+        return "redirect:/customer/addresses";
+    }
+
     @GetMapping("/profile")
     public String profile(Model model) {
         model.addAttribute("titulo", "Perfil");
