@@ -74,6 +74,12 @@
                         Marcar principal
                     </button>
                 </form>
+                
+                <a th:href="@{/customer/addresses/{id}/edit(id=${a.id})}"
+                   class="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-700 hover:bg-slate-50">
+                    Editar
+                </a>
+
                 <form th:action="@{/customer/addresses/{id}/delete(id=${a.id})}"
                       method="post"
                       class="inline"
