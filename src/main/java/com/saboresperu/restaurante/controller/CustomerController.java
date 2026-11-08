@@ -1,5 +1,6 @@
 package com.saboresperu.restaurante.controller;
 
+import com.saboresperu.restaurante.domain.SessionUserKeys;
 import com.saboresperu.restaurante.dto.AddressFormDto;
 import com.saboresperu.restaurante.dto.CustomerProfileFormDto;
 import com.saboresperu.restaurante.entity.Customer;
@@ -11,8 +12,10 @@ import com.saboresperu.restaurante.repository.GeoProvinceRepository;
 import com.saboresperu.restaurante.repository.PaymentRepository;
 import com.saboresperu.restaurante.service.interfaces.*;
 import com.saboresperu.restaurante.util.SecurityUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -184,24 +187,57 @@ public class CustomerController {
     @PostMapping("/profile")
     public String updateProfile(@Valid @ModelAttribute("form") CustomerProfileFormDto form,
                                 BindingResult result,
+                                HttpServletRequest request,
                                 RedirectAttributes ra,
                                 Model model) {
         Customer customer = currentCustomer();
+
         if (result.hasErrors()) {
             model.addAttribute("titulo", "Mi perfil");
             model.addAttribute("customer", customer);
             return "customer/profile";
         }
+
         try {
-            customerService.updateProfile(customer.getId(), form);
-            ra.addFlashAttribute("mensaje", "Perfil actualizado");
+            var update = customerService.updateProfile(customer.getId(), form);
+
+            if (update.requiresReLogin()) {
+                // Invalidar sesión y SecurityContext
+                var session = request.getSession(false);
+                if (session != null) {
+                    session.invalidate();
+                }
+                SecurityContextHolder.clearContext();
+
+                ra.addFlashAttribute("mensaje",
+                        "Perfil actualizado. Debes iniciar sesión de nuevo porque cambiaste el correo o la contraseña.");
+                return "redirect:/login";
+            }
+
+            // Mismo correo y misma clave: actualizar datos visibles en sesión
+            var session = request.getSession(false);
+            if (session != null) {
+                session.setAttribute(SessionUserKeys.DISPLAY_NAME,
+                        update.firstName() + " " + update.lastName());
+                session.setAttribute(SessionUserKeys.INITIALS, initials(update.firstName(), update.lastName()));
+                session.setAttribute(SessionUserKeys.EMAIL, update.email());
+            }
+
+            ra.addFlashAttribute("mensaje", "Perfil actualizado correctamente");
             return "redirect:/customer/profile";
+
         } catch (RuntimeException ex) {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("titulo", "Mi perfil");
             model.addAttribute("customer", customer);
             return "customer/profile";
         }
+    }
+
+    private static String initials(String first, String last) {
+        String a = (first != null && !first.isBlank()) ? first.substring(0, 1).toUpperCase() : "";
+        String b = (last != null && !last.isBlank()) ? last.substring(0, 1).toUpperCase() : "";
+        return (a + b).isEmpty() ? "?" : a + b;
     }
 
     /** Rehidrata provincias/distritos al fallar validación en edición/alta. */

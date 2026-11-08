@@ -40,8 +40,23 @@
                 <a th:href="@{/login}" class="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100">Entrar</a>
                 <a th:href="@{/register}" class="rounded-lg bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">Registro</a>
             </th:block>
+
             <th:block sec:authorize="isAuthenticated()">
-                <span class="hidden max-w-[140px] truncate text-xs text-slate-500 sm:inline" sec:authentication="name"></span>
+                <div class="hidden items-center gap-2 sm:flex">
+                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700"
+                         th:text="${session.INITIALS != null ? session.INITIALS : '?'}">
+                        SP
+                    </div>
+                    <span class="max-w-[140px] truncate text-sm font-medium text-slate-700"
+                          th:text="${session.DISPLAY_NAME != null ? session.DISPLAY_NAME : #authentication.name}">
+                        Usuario
+                    </span>
+                </div>
+                <!-- móvil: solo avatar -->
+                <div class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-100 text-xs font-bold text-sky-700 sm:hidden"
+                     th:text="${session.INITIALS != null ? session.INITIALS : '?'}">
+                    SP
+                </div>
                 <form th:action="@{/logout}" method="post" class="inline">
                     <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                     <button type="submit"

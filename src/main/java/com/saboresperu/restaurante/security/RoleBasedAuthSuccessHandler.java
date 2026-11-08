@@ -1,6 +1,7 @@
 package com.saboresperu.restaurante.security;
 
 import com.saboresperu.restaurante.domain.SecuritySessionKeys;
+import com.saboresperu.restaurante.domain.SessionUserKeys;
 import com.saboresperu.restaurante.dto.SessionAuthorizationDto;
 import com.saboresperu.restaurante.repository.UserRepository;
 import com.saboresperu.restaurante.service.impl.AccessAuditServiceImpl;
@@ -30,7 +31,23 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
 
         userRepository.findByEmail(authentication.getName()).ifPresent(user -> {
             SessionAuthorizationDto authz = effectivePermissionService.buildSessionAuthorization(user.getId());
+
+            String displayName = (user.getFirstName() + " " + user.getLastName()).trim();
+            String initials = "";
+            if (user.getFirstName() != null && !user.getFirstName().isBlank()) {
+                initials += user.getFirstName().substring(0, 1).toUpperCase();
+            }
+            if (user.getLastName() != null && !user.getLastName().isBlank()) {
+                initials += user.getLastName().substring(0, 1).toUpperCase();
+            }
+            if (initials.isEmpty()) {
+                initials = "?";
+            }
+
             HttpSession session = request.getSession(true);
+            session.setAttribute(SessionUserKeys.DISPLAY_NAME, displayName);
+            session.setAttribute(SessionUserKeys.INITIALS, initials);
+            session.setAttribute(SessionUserKeys.EMAIL, user.getEmail());
             session.setAttribute(SecuritySessionKeys.SECURITY_VERSION, authz.securityVersion());
             session.setAttribute(SecuritySessionKeys.EFFECTIVE_PERMISSIONS, authz.permissionCodes());
             session.setAttribute(SecuritySessionKeys.MENU_ITEMS, authz.menuItems());
