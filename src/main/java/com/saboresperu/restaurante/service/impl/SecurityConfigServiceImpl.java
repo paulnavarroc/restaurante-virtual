@@ -11,11 +11,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class SecurityConfigServiceImpl implements SecurityConfigService {
 
-    public static final String KEY_VERSION = "SECURITY_VERSION";
+    private static final int SINGLETON_ID = 1;
 
     private final SecurityConfigRepository securityConfigRepository;
     private final SecurityAuditLogRepository securityAuditLogRepository;
@@ -24,39 +26,40 @@ public class SecurityConfigServiceImpl implements SecurityConfigService {
     @Override
     @Transactional(readOnly = true)
     public long currentVersion() {
-        return securityConfigRepository.findByConfigKey(KEY_VERSION)
-                .map(c -> {
-                    try {
-                        return Long.parseLong(c.getConfigValue());
-                    } catch (NumberFormatException e) {
-                        return 1L;
-                    }
-                })
+        return securityConfigRepository.findById(SINGLETON_ID)
+                .map(c -> c.getSecurityVersion() != null
+                        ? c.getSecurityVersion().longValue()
+                        : 1L)
                 .orElse(1L);
     }
 
     @Override
     @Transactional
     public void bumpSecurityVersion(Integer actorUserId, String reason) {
-        SecurityConfig cfg = securityConfigRepository.findByConfigKey(KEY_VERSION)
+        SecurityConfig cfg = securityConfigRepository
+                .findByIdForUpdate(SINGLETON_ID)
                 .orElseGet(() -> SecurityConfig.builder()
-                        .configKey(KEY_VERSION)
-                        .configValue("1")
+                        .id(SINGLETON_ID)
+                        .securityVersion(1)
+                        .updatedAt(LocalDateTime.now())
                         .build());
-        long next = currentVersion() + 1;
-        cfg.setConfigValue(String.valueOf(next));
-        cfg.setUpdatedAt(java.time.LocalDateTime.now());
+
+        int next = (cfg.getSecurityVersion() != null ? cfg.getSecurityVersion() : 1) + 1;
+        cfg.setSecurityVersion(next);
+        cfg.setUpdatedAt(LocalDateTime.now());
         securityConfigRepository.save(cfg);
 
         User actor = actorUserId != null
-                ? userRepository.findById(actorUserId).orElse(null) : null;
+                ? userRepository.findById(actorUserId).orElse(null)
+                : null;
+
         securityAuditLogRepository.save(SecurityAuditLog.builder()
                 .user(actor)
                 .action("SECURITY_VERSION_BUMP")
                 .entityType("SecurityConfig")
-                .entityId(KEY_VERSION)
-                .detail(reason != null ? reason : "Version=" + next)
-                .createdAt(java.time.LocalDateTime.now())
+                .entityId(String.valueOf(SINGLETON_ID))
+                .detail(reason != null ? reason : ("Version=" + next))
+                .createdAt(LocalDateTime.now())
                 .build());
     }
 }

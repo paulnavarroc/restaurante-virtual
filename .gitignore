@@ -20,6 +20,7 @@ target/
 application-dev.yml
 app.css
 styles.css
+AGENTS.MD
 
 ### IntelliJ IDEA ###
 .idea
