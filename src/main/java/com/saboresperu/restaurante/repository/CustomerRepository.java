@@ -35,4 +35,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
        ORDER BY c.createdAt DESC
        """)
     List<Customer> search(@Param("q") String q);
+
+    @Query("""
+       SELECT c FROM Customer c
+       JOIN FETCH c.user
+       WHERE c.user.email = :email
+       """)
+    Optional<Customer> findByUserEmailWithUser(@Param("email") String email);
 }

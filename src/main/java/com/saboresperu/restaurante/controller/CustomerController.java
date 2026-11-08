@@ -1,6 +1,7 @@
 package com.saboresperu.restaurante.controller;
 
 import com.saboresperu.restaurante.dto.AddressFormDto;
+import com.saboresperu.restaurante.dto.CustomerProfileFormDto;
 import com.saboresperu.restaurante.entity.Customer;
 import com.saboresperu.restaurante.entity.CustomerAddress;
 import com.saboresperu.restaurante.entity.Order;
@@ -173,9 +174,34 @@ public class CustomerController {
 
     @GetMapping("/profile")
     public String profile(Model model) {
-        model.addAttribute("titulo", "Perfil");
-        model.addAttribute("customer", currentCustomer());
+        Customer customer = currentCustomer();
+        model.addAttribute("titulo", "Mi perfil");
+        model.addAttribute("customer", customer);
+        model.addAttribute("form", customerService.getProfileForm(customer.getId()));
         return "customer/profile";
+    }
+
+    @PostMapping("/profile")
+    public String updateProfile(@Valid @ModelAttribute("form") CustomerProfileFormDto form,
+                                BindingResult result,
+                                RedirectAttributes ra,
+                                Model model) {
+        Customer customer = currentCustomer();
+        if (result.hasErrors()) {
+            model.addAttribute("titulo", "Mi perfil");
+            model.addAttribute("customer", customer);
+            return "customer/profile";
+        }
+        try {
+            customerService.updateProfile(customer.getId(), form);
+            ra.addFlashAttribute("mensaje", "Perfil actualizado");
+            return "redirect:/customer/profile";
+        } catch (RuntimeException ex) {
+            model.addAttribute("error", ex.getMessage());
+            model.addAttribute("titulo", "Mi perfil");
+            model.addAttribute("customer", customer);
+            return "customer/profile";
+        }
     }
 
     /** Rehidrata provincias/distritos al fallar validación en edición/alta. */
