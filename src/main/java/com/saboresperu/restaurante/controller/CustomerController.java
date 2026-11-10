@@ -3,6 +3,7 @@ package com.saboresperu.restaurante.controller;
 import com.saboresperu.restaurante.domain.SessionUserKeys;
 import com.saboresperu.restaurante.dto.AddressFormDto;
 import com.saboresperu.restaurante.dto.CustomerProfileFormDto;
+import com.saboresperu.restaurante.dto.ProfileUpdateResult;
 import com.saboresperu.restaurante.entity.Customer;
 import com.saboresperu.restaurante.entity.CustomerAddress;
 import com.saboresperu.restaurante.entity.Order;
@@ -13,6 +14,7 @@ import com.saboresperu.restaurante.repository.PaymentRepository;
 import com.saboresperu.restaurante.service.interfaces.*;
 import com.saboresperu.restaurante.util.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -174,7 +176,6 @@ public class CustomerController {
         ra.addFlashAttribute("mensaje", "Dirección eliminada");
         return "redirect:/customer/addresses";
     }
-
     @GetMapping("/profile")
     public String profile(Model model) {
         Customer customer = currentCustomer();
@@ -195,31 +196,30 @@ public class CustomerController {
         if (result.hasErrors()) {
             model.addAttribute("titulo", "Mi perfil");
             model.addAttribute("customer", customer);
+            // form ya viene con errores
             return "customer/profile";
         }
 
         try {
-            var update = customerService.updateProfile(customer.getId(), form);
+            ProfileUpdateResult update =
+                    customerService.updateProfile(customer.getId(), form);
 
             if (update.requiresReLogin()) {
-                // Invalidar sesión y SecurityContext
-                var session = request.getSession(false);
+                HttpSession session = request.getSession(false);
                 if (session != null) {
                     session.invalidate();
                 }
                 SecurityContextHolder.clearContext();
-
-                ra.addFlashAttribute("mensaje",
-                        "Perfil actualizado. Debes iniciar sesión de nuevo porque cambiaste el correo o la contraseña.");
+                ra.addFlashAttribute("mensaje", "Perfil actualizado. Inicia sesión de nuevo (cambió correo o contraseña).");
                 return "redirect:/login";
             }
 
-            // Mismo correo y misma clave: actualizar datos visibles en sesión
-            var session = request.getSession(false);
+            HttpSession session = request.getSession(false);
             if (session != null) {
                 session.setAttribute(SessionUserKeys.DISPLAY_NAME,
                         update.firstName() + " " + update.lastName());
-                session.setAttribute(SessionUserKeys.INITIALS, initials(update.firstName(), update.lastName()));
+                session.setAttribute(SessionUserKeys.INITIALS,
+                        initials(update.firstName(), update.lastName()));
                 session.setAttribute(SessionUserKeys.EMAIL, update.email());
             }
 
@@ -230,13 +230,16 @@ public class CustomerController {
             model.addAttribute("error", ex.getMessage());
             model.addAttribute("titulo", "Mi perfil");
             model.addAttribute("customer", customer);
+            model.addAttribute("form", form);
             return "customer/profile";
         }
     }
 
     private static String initials(String first, String last) {
-        String a = (first != null && !first.isBlank()) ? first.substring(0, 1).toUpperCase() : "";
-        String b = (last != null && !last.isBlank()) ? last.substring(0, 1).toUpperCase() : "";
+        String a = (first != null && !first.isBlank())
+                ? first.substring(0, 1).toUpperCase() : "";
+        String b = (last != null && !last.isBlank())
+                ? last.substring(0, 1).toUpperCase() : "";
         return (a + b).isEmpty() ? "?" : a + b;
     }
 

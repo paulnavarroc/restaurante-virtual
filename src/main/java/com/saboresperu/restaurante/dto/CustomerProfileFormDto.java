@@ -11,7 +11,7 @@ public record CustomerProfileFormDto(
         @Size(max = 30) String phone,
         @Size(max = 20) String documentType,
         @Size(max = 30) String documentNumber,
-        /** Opcional: solo si quiere cambiar clave */
-        @Size(min = 6, max = 100) String newPassword,
-        String confirmPassword
+        /** Vacío = no cambiar. Mínimo 6 solo si viene informado (validar en service). */
+        @Size(max = 100) String newPassword,
+        @Size(max = 100) String confirmPassword
 ) {}
