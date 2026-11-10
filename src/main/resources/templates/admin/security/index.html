@@ -1,1 +1,147 @@
-﻿
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}"
+      lang="es">
+<head>
+    <title>Seguridad</title>
+</head>
+<body>
+<th:block layout:fragment="pageTitle">Seguridad y permisos</th:block>
+
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Roles, grupos y permisos</h2>
+            <p class="mt-1 text-sm text-slate-500">Configuración ACL del sistema</p>
+        </div>
+    </div>
+
+    <!-- Tabs simples por anclas -->
+    <div class="mb-4 flex flex-wrap gap-2 text-sm">
+        <a href="#roles" class="rounded-lg bg-sky-600 px-3 py-1.5 font-medium text-white">Roles</a>
+        <a href="#groups" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50">Grupos</a>
+        <a href="#permissions" class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-700 hover:bg-slate-50">Permisos</a>
+    </div>
+
+    <!-- ROLES -->
+    <div id="roles" class="mb-10">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-lg font-semibold text-slate-900">Roles</h3>
+            <a sec:authorize="hasAuthority('PERM_ROLES_MANAGE')"
+               th:href="@{/admin/security/roles/new}"
+               class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                <i class="bi bi-plus-lg"></i> Nuevo rol
+            </a>
+        </div>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Nombre</th>
+                    <th class="px-4 py-3">Descripción</th>
+                    <th class="px-4 py-3">Grupos</th>
+                    <th class="px-4 py-3">Usuarios</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                <tr th:each="r : ${roles}" class="hover:bg-slate-50/80">
+                    <td class="px-4 py-3 font-medium text-slate-900" th:text="${r.name}">ADMIN</td>
+                    <td class="px-4 py-3 text-slate-600" th:text="${r.description}">—</td>
+                    <td class="px-4 py-3" th:text="${r.groupCount}">0</td>
+                    <td class="px-4 py-3" th:text="${r.userCount}">0</td>
+                    <td class="px-4 py-3">
+                        <span th:if="${r.active}" class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Activo</span>
+                        <span th:unless="${r.active}" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Inactivo</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a th:href="@{/admin/security/roles/{id}/edit(id=${r.id})}"
+                           class="text-sky-600 hover:underline">Editar</a>
+                    </td>
+                </tr>
+                <tr th:if="${roles == null or #lists.isEmpty(roles)}">
+                    <td colspan="6" class="px-4 py-8 text-center text-slate-500">No hay roles</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- GROUPS -->
+    <div id="groups" class="mb-10">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <h3 class="text-lg font-semibold text-slate-900">Grupos de permisos</h3>
+            <a sec:authorize="hasAuthority('PERM_PERMISSIONS_MANAGE')"
+               th:href="@{/admin/security/groups/new}"
+               class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                <i class="bi bi-plus-lg"></i> Nuevo grupo
+            </a>
+        </div>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Código</th>
+                    <th class="px-4 py-3">Nombre</th>
+                    <th class="px-4 py-3">Permisos</th>
+                    <th class="px-4 py-3">Estado</th>
+                    <th class="px-4 py-3"></th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                <tr th:each="g : ${groups}" class="hover:bg-slate-50/80">
+                    <td class="px-4 py-3 font-mono text-xs text-slate-800" th:text="${g.code}">GESTION_X</td>
+                    <td class="px-4 py-3" th:text="${g.name}">Nombre</td>
+                    <td class="px-4 py-3" th:text="${g.permissionCount}">0</td>
+                    <td class="px-4 py-3">
+                        <span th:if="${g.active}" class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Activo</span>
+                        <span th:unless="${g.active}" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Inactivo</span>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                        <a th:href="@{/admin/security/groups/{id}/edit(id=${g.id})}"
+                           class="text-sky-600 hover:underline">Editar</a>
+                    </td>
+                </tr>
+                <tr th:if="${groups == null or #lists.isEmpty(groups)}">
+                    <td colspan="5" class="px-4 py-8 text-center text-slate-500">No hay grupos</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PERMISSIONS (solo lectura del catálogo) -->
+    <div id="permissions">
+        <h3 class="mb-3 text-lg font-semibold text-slate-900">Catálogo de permisos</h3>
+        <p class="mb-3 text-sm text-slate-500">Los códigos se definen en seed/código. Crear un permiso en BD no habilita funcionalidad nueva.</p>
+        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Código</th>
+                    <th class="px-4 py-3">Módulo</th>
+                    <th class="px-4 py-3">Descripción</th>
+                    <th class="px-4 py-3">Estado</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                <tr th:each="p : ${permissions}">
+                    <td class="px-4 py-2 font-mono text-xs" th:text="${p.code}">USERS_VIEW</td>
+                    <td class="px-4 py-2" th:text="${p.module}">USERS</td>
+                    <td class="px-4 py-2 text-slate-600" th:text="${p.description}">—</td>
+                    <td class="px-4 py-2">
+                        <span th:text="${p.active} ? 'Activo' : 'Inactivo'"
+                              th:classappend="${p.active} ? 'text-emerald-700' : 'text-slate-500'"
+                              class="text-xs font-semibold"></span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+</body>
+</html>

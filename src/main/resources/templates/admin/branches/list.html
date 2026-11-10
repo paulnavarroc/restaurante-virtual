@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      layout:decorate="~{layout/admin}"
+      lang="es">
+<head>
+    <title>Sedes</title>
+</head>
+<body>
+<th:block layout:fragment="pageTitle">Sedes</th:block>
+
+<section layout:fragment="content">
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h2 class="text-xl font-bold text-slate-900">Sedes / Branches</h2>
+            <p class="mt-1 text-sm text-slate-500">Cocinas y cobertura de delivery</p>
+        </div>
+        <a sec:authorize="hasAnyAuthority('PERM_BRANCHES_MANAGE') or hasRole('ADMINISTRATOR')"
+           th:href="@{/admin/branches/new}"
+           class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-sky-700">
+            <i class="bi bi-plus-lg"></i> Nueva sede
+        </a>
+    </div>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <table class="min-w-full text-left text-sm">
+            <thead class="border-b border-slate-100 bg-slate-50 text-xs uppercase text-slate-500">
+            <tr>
+                <th class="px-4 py-3">Nombre</th>
+                <th class="px-4 py-3">Dirección</th>
+                <th class="px-4 py-3">Teléfono</th>
+                <th class="px-4 py-3">Radio (km)</th>
+                <th class="px-4 py-3">Tenant</th>
+                <th class="px-4 py-3">Estado</th>
+                <th class="px-4 py-3"></th>
+            </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+            <tr th:each="b : ${branches}" class="hover:bg-slate-50/80">
+                <td class="px-4 py-3 font-medium text-slate-900" th:text="${b.name}">Lima</td>
+                <td class="px-4 py-3 text-slate-600 max-w-xs truncate" th:text="${b.address}">—</td>
+                <td class="px-4 py-3" th:text="${b.phone != null ? b.phone : '—'}">—</td>
+                <td class="px-4 py-3" th:text="${b.coverageRadiusKm}">5</td>
+                <td class="px-4 py-3 font-mono text-xs" th:text="${b.tenantKey != null ? b.tenantKey : '—'}">lima</td>
+                <td class="px-4 py-3">
+                    <span th:if="${b.active}" class="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Activa</span>
+                    <span th:unless="${b.active}" class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">Inactiva</span>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                    <a th:href="@{/admin/branches/{id}/edit(id=${b.id})}"
+                       class="text-sky-600 hover:underline">Editar</a>
+                    <form th:if="${b.active}" th:action="@{/admin/branches/{id}/deactivate(id=${b.id})}"
+                          method="post" class="ml-2 inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="text-xs text-slate-500 hover:text-red-600">Desactivar</button>
+                    </form>
+                    <form th:unless="${b.active}" th:action="@{/admin/branches/{id}/activate(id=${b.id})}"
+                          method="post" class="ml-2 inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                        <button type="submit" class="text-xs text-emerald-600 hover:underline">Activar</button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${branches == null or #lists.isEmpty(branches)}">
+                <td colspan="7" class="px-4 py-10 text-center text-slate-500">No hay sedes registradas</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+</body>
+</html>
