@@ -20,4 +20,12 @@ public interface CourierRepository extends JpaRepository<Courier, Integer> {
              AND c.status = :status
            """)
     List<Courier> findDisponiblesByBranch(@Param("branchId") Integer branchId, @Param("status") String status);
+
+    @Query("""
+       SELECT c FROM Courier c
+       JOIN FETCH c.branch
+       JOIN FETCH c.user
+       WHERE c.user.id = :userId
+       """)
+    Optional<Courier> findByUserIdWithBranch(@Param("userId") Integer userId);
 }

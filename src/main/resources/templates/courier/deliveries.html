@@ -10,9 +10,13 @@
 <section layout:fragment="content">
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-slate-900">Entregas</h1>
-        <p class="text-sm text-slate-500"
-           th:if="${courier != null and courier.branch != null}"
-           th:text="${'Sede: ' + courier.branch.name + ' · Estado: ' + courier.status}"></p>
+        <p class="text-sm text-slate-500" th:if="${courier != null}">
+        <span th:if="${courier.branch != null}">
+            Sede: <span th:text="${courier.branch.name}">—</span>
+            <span class="text-slate-400"> · </span>
+        </span>
+            Estado: <span th:text="${courier.status}">—</span>
+        </p>
     </div>
 
     <!-- Mis entregas activas -->

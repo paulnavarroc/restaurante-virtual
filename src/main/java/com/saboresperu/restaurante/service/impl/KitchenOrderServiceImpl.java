@@ -31,13 +31,14 @@ public class KitchenOrderServiceImpl implements KitchenOrderService {
     private final DeliveryService deliveryService;
     private final OrderStockReservationRepository reservationRepository;
 
-
+    
     @Override
     @Transactional(readOnly = true)
     public List<Order> listActiveForBranch(Integer branchId) {
-        return orderRepository.findByBranchIdWithStatus(branchId).stream()
-                .filter(o -> KITCHEN_VISIBLE.contains(o.getOrderStatus().getCode()))
-                .toList();
+        return orderRepository.findKitchenQueue(
+                branchId,
+                List.of("PENDING", "CONFIRMED", "IN_PREPARATION", "READY")
+        );
     }
 
     @Override

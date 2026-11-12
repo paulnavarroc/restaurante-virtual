@@ -17,4 +17,12 @@ public interface KitchenStaffRepository extends JpaRepository<KitchenStaff, Inte
            WHERE k.user.id = :userId AND k.isActive = true
            """)
     Optional<KitchenStaff> findActiveByUserId(@Param("userId") Integer userId);
+
+    @Query("""
+       SELECT s FROM KitchenStaff s
+       JOIN FETCH s.branch
+       JOIN FETCH s.user
+       WHERE s.user.id = :userId AND s.isActive = true
+       """)
+    Optional<KitchenStaff> findActiveByUserIdWithBranch(@Param("userId") Integer userId);
 }

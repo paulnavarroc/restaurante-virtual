@@ -25,7 +25,8 @@ public class KitchenController {
     private KitchenStaff requireStaff() {
         User user = userRepository.findByEmail(securityUtils.currentEmail())
                 .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
-        return kitchenStaffRepository.findActiveByUserId(user.getId())
+
+        return kitchenStaffRepository.findActiveByUserIdWithBranch(user.getId())
                 .orElseThrow(() -> new IllegalStateException("No tienes sede de cocina asignada"));
     }
 

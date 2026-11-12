@@ -61,4 +61,29 @@ public interface DeliveryRepository extends JpaRepository<Delivery, Integer> {
        WHERE d.status IN ('PENDING', 'ASSIGNED', 'ON_ROUTE')
        """)
     long countOpenDeliveries();
+
+    @Query("""
+       SELECT d FROM Delivery d
+       JOIN FETCH d.order o
+       LEFT JOIN FETCH o.address a
+       LEFT JOIN FETCH a.district
+       WHERE d.courier.id = :courierId
+         AND d.status IN ('ASSIGNED', 'ON_ROUTE')
+       ORDER BY d.id DESC
+       """)
+    List<Delivery> findActiveForCourier(@Param("courierId") Integer courierId);
+
+    /*
+    @Query("""
+       SELECT d FROM Delivery d
+       JOIN FETCH d.order o
+       LEFT JOIN FETCH o.address a
+       WHERE d.branch.id = :branchId
+         AND d.status = 'PENDING'
+         AND d.courier IS NULL
+       ORDER BY d.id ASC
+       """)
+    List<Delivery> findPendingForBranch(@Param("branchId") Integer branchId);
+    
+     */
 }

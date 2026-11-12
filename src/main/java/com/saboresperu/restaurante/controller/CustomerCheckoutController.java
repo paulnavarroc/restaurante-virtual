@@ -1,5 +1,6 @@
 package com.saboresperu.restaurante.controller;
 
+import com.saboresperu.restaurante.dto.CartDto;
 import com.saboresperu.restaurante.dto.CheckoutPreviewDto;
 import com.saboresperu.restaurante.dto.CheckoutRequestDto;
 import com.saboresperu.restaurante.entity.Customer;
@@ -38,7 +39,7 @@ public class CustomerCheckoutController {
                                Model model) {
         Customer customer = customerService.requireByUserEmail(securityUtils.currentEmail());
         var cart = cartService.getCart(session);
-        if (cart.isEmpty()) {
+        if (cart == null || cart.isEmpty()) {
             return "redirect:/customer/cart";
         }
 
@@ -49,10 +50,8 @@ public class CustomerCheckoutController {
         model.addAttribute("preview", preview);
         model.addAttribute("addresses", addressService.listByCustomerId(customer.getId()));
         model.addAttribute("paymentMethods", paymentService.listActiveMethods());
-
         if (!model.containsAttribute("form")) {
-            model.addAttribute("form", new CheckoutRequestDto(
-                    addressId, null, null, couponCode));
+            model.addAttribute("form", new CheckoutRequestDto(addressId, null, null, couponCode));
         }
         return "customer/checkout";
     }
@@ -77,15 +76,12 @@ public class CustomerCheckoutController {
                              Model model) {
         Customer customer = customerService.requireByUserEmail(securityUtils.currentEmail());
         var cart = cartService.getCart(session);
-
-        if (cart.isEmpty()) {
+        if (cart == null || cart.isEmpty()) {
             return "redirect:/customer/cart";
         }
+
         if (bindingResult.hasErrors()) {
-            model.addAttribute("titulo", "Confirmar pedido");
-            model.addAttribute("cart", cart);
-            model.addAttribute("addresses", addressService.listByCustomerId(customer.getId()));
-            model.addAttribute("paymentMethods", paymentService.listActiveMethods());
+            fillCheckoutModel(model, customer, cart, form);
             return "customer/checkout";
         }
 
@@ -97,12 +93,22 @@ public class CustomerCheckoutController {
             return "redirect:/customer/orders/" + order.getId();
         } catch (RuntimeException ex) {
             model.addAttribute("error", ex.getMessage());
-            model.addAttribute("titulo", "Confirmar pedido");
-            model.addAttribute("cart", cart);
-            model.addAttribute("addresses", addressService.listByCustomerId(customer.getId()));
-            model.addAttribute("paymentMethods", paymentService.listActiveMethods());
+            fillCheckoutModel(model, customer, cart, form);
             return "customer/checkout";
         }
     }
 
+    private void fillCheckoutModel(Model model, Customer customer, CartDto cart, CheckoutRequestDto form) {
+        CheckoutPreviewDto preview = orderService.preview(
+                customer.getId(),
+                form != null ? form.addressId() : null,
+                form != null ? form.couponCode() : null,
+                cart);
+        model.addAttribute("titulo", "Confirmar pedido");
+        model.addAttribute("cart", cart);
+        model.addAttribute("preview", preview);
+        model.addAttribute("addresses", addressService.listByCustomerId(customer.getId()));
+        model.addAttribute("paymentMethods", paymentService.listActiveMethods());
+        model.addAttribute("form", form);
+    }
 }

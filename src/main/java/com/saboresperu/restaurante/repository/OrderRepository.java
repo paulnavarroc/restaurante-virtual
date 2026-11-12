@@ -127,4 +127,17 @@ public interface OrderRepository extends JpaRepository<Order, Integer> {
        ORDER BY o.orderedAt DESC
        """)
     List<Order> findRecentWithStatus(Pageable pageable);
+
+    @Query("""
+       SELECT DISTINCT o FROM Order o
+       JOIN FETCH o.orderStatus os
+       JOIN FETCH o.branch
+       LEFT JOIN FETCH o.items
+       WHERE o.branch.id = :branchId
+         AND os.code IN :statusCodes
+       ORDER BY o.orderedAt ASC
+       """)
+    List<Order> findKitchenQueue(
+            @Param("branchId") Integer branchId,
+            @Param("statusCodes") Collection<String> statusCodes);
 }

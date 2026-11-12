@@ -52,6 +52,7 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
+                                "/legal/**",
                                 "/media/**",
                                 "/webjars/**",
                                 "/error",

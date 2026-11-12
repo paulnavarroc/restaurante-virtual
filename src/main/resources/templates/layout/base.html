@@ -106,12 +106,43 @@
       layout:fragment="content">
 </main>
 
-<footer class="border-t border-slate-200 bg-white">
-    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-slate-500 sm:flex-row sm:px-6">
-        <span>© Sabores Perú</span>
-        <a th:href="@{/menu}" class="hover:text-sky-600">Ver menú</a>
+<footer class="mt-auto border-t border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-center text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <p>© <span th:text="${#dates.format(#dates.createNow(), 'yyyy')}">2026</span> Sabores Perú</p>
+        <nav class="flex flex-wrap justify-center gap-4">
+            <a th:href="@{/legal/terms}" class="hover:text-sky-600">Aviso legal</a>
+            <a th:href="@{/legal/privacy}" class="hover:text-sky-600">Privacidad</a>
+            <a th:href="@{/legal/cookies}" class="hover:text-sky-600">Cookies</a>
+        </nav>
     </div>
 </footer>
+<div id="cookie-banner" class="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white p-4 shadow-lg"
+     style="display:none">
+    <div class="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-sm text-slate-600">
+            Usamos cookies esenciales para el carrito y la seguridad.
+            <a th:href="@{/legal/cookies}" class="text-sky-600 underline">Más información</a>
+        </p>
+        <button type="button" id="cookie-accept"
+                class="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+            Entendido
+        </button>
+    </div>
+</div>
+
+<script>
+    (function () {
+        try {
+            if (!localStorage.getItem('sp_cookies_ok')) {
+                document.getElementById('cookie-banner').style.display = 'block';
+            }
+            document.getElementById('cookie-accept')?.addEventListener('click', function () {
+                localStorage.setItem('sp_cookies_ok', '1');
+                document.getElementById('cookie-banner').style.display = 'none';
+            });
+        } catch (e) {}
+    })();
+</script>
 
 <script>
     (function () {

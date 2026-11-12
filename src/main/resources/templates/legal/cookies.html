@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}" lang="es">
+<head><title>Política de cookies</title></head>
+<body>
+<section layout:fragment="content" class="mx-auto max-w-3xl">
+    <h1 class="text-2xl font-bold text-slate-900">Política de cookies</h1>
+    <p class="mt-2 text-sm text-slate-500">Última actualización: noviembre 2026</p>
+
+    <div class="mt-8 space-y-4 text-sm leading-relaxed text-slate-700">
+        <h2 class="text-lg font-semibold text-slate-900">1. Qué son las cookies</h2>
+        <p>
+            Son pequeños archivos que el sitio guarda en tu navegador para hacer funcionar el Servicio
+            (sesión, seguridad) o, si se habilitan, medir uso.
+        </p>
+
+        <h2 class="text-lg font-semibold text-slate-900">2. Cookies que usamos</h2>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="min-w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600">
+                <tr>
+                    <th class="px-3 py-2">Cookie / mecanismo</th>
+                    <th class="px-3 py-2">Finalidad</th>
+                    <th class="px-3 py-2">Tipo</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                <tr>
+                    <td class="px-3 py-2 font-mono">JSESSIONID (o equivalente)</td>
+                    <td class="px-3 py-2">Mantener la sesión de usuario y el carrito</td>
+                    <td class="px-3 py-2">Esencial</td>
+                </tr>
+                <tr>
+                    <td class="px-3 py-2 font-mono">XSRF-TOKEN / CSRF</td>
+                    <td class="px-3 py-2">Protección contra ataques CSRF</td>
+                    <td class="px-3 py-2">Esencial</td>
+                </tr>
+                <tr>
+                    <td class="px-3 py-2">Preferencia cookies (si se implementa banner)</td>
+                    <td class="px-3 py-2">Recordar si aceptaste cookies no esenciales</td>
+                    <td class="px-3 py-2">Preferencia</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2 class="text-lg font-semibold text-slate-900">3. Base y gestión</h2>
+        <p>
+            Las cookies <strong>esenciales</strong> son necesarias para login, carrito y seguridad; no requieren
+            consentimiento. Las analíticas o marketing (si se añaden después) se activarán solo con tu
+            aceptación.
+        </p>
+        <p>
+            Puedes borrar o bloquear cookies en la configuración de tu navegador; al hacerlo es posible que
+            debas iniciar sesión de nuevo o pierdas el carrito.
+        </p>
+
+        <h2 class="text-lg font-semibold text-slate-900">4. Más información</h2>
+        <p>
+            Consulta también la
+            <a th:href="@{/legal/privacy}" class="text-sky-600 underline">política de privacidad</a>.
+        </p>
+    </div>
+</section>
+</body>
+</html>

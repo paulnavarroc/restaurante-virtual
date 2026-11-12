@@ -25,7 +25,7 @@ public class CourierController {
     private Courier requireCourier() {
         User user = userRepository.findByEmail(securityUtils.currentEmail())
                 .orElseThrow(() -> new IllegalStateException("Usuario no encontrado"));
-        return courierRepository.findByUserId(user.getId())
+        return courierRepository.findByUserIdWithBranch(user.getId())
                 .filter(c -> Boolean.TRUE.equals(c.getIsActive()))
                 .orElseThrow(() -> new IllegalStateException("No tienes perfil de repartidor activo"));
     }
