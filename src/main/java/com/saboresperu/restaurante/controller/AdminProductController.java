@@ -6,11 +6,13 @@ import com.saboresperu.restaurante.repository.RegionRepository;
 import com.saboresperu.restaurante.service.interfaces.AdminProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -42,10 +44,11 @@ public class AdminProductController {
         return "admin/products/form";
     }
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('PERM_PRODUCTS_CREATE')")
     public String create(@Valid @ModelAttribute("form") ProductFormDto form,
                          BindingResult bindingResult,
+                         @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
                          RedirectAttributes ra,
                          Model model) {
         if (bindingResult.hasErrors()) {
@@ -54,7 +57,7 @@ public class AdminProductController {
             return "admin/products/form";
         }
         try {
-            Integer id = adminProductService.create(form);
+            Integer id = adminProductService.create(form, imageFile);
             ra.addFlashAttribute("mensaje", "Producto creado");
             return "redirect:/admin/products";
         } catch (RuntimeException ex) {
@@ -73,12 +76,13 @@ public class AdminProductController {
         addCatalogs(model);
         return "admin/products/form";
     }
-
-    @PostMapping("/{id}")
+    
+    @PostMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAuthority('PERM_PRODUCTS_EDIT')")
     public String update(@PathVariable Integer id,
                          @Valid @ModelAttribute("form") ProductFormDto form,
                          BindingResult bindingResult,
+                         @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
                          RedirectAttributes ra,
                          Model model) {
         if (bindingResult.hasErrors()) {
@@ -87,7 +91,7 @@ public class AdminProductController {
             return "admin/products/form";
         }
         try {
-            adminProductService.update(id, form);
+            adminProductService.update(id, form, imageFile);
             ra.addFlashAttribute("mensaje", "Producto actualizado");
             return "redirect:/admin/products";
         } catch (RuntimeException ex) {

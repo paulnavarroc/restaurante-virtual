@@ -12,6 +12,7 @@ import com.saboresperu.restaurante.service.interfaces.AdminProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,6 +26,7 @@ public class AdminProductServiceImpl implements AdminProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final RegionRepository regionRepository;
+    private final ProductImageStorageService productImageStorageService;
 
     @Override
     @Transactional(readOnly = true)
@@ -56,17 +58,19 @@ public class AdminProductServiceImpl implements AdminProductService {
 
     @Override
     @Transactional
-    public Integer create(ProductFormDto form) {
+    public Integer create(ProductFormDto form, MultipartFile imageFile) {
         Product p = mapNew(form);
+        applyImage(p, form, imageFile, false);
         return productRepository.save(p).getId();
     }
 
     @Override
     @Transactional
-    public void update(Integer id, ProductFormDto form) {
+    public void update(Integer id, ProductFormDto form, MultipartFile imageFile) {
         Product p = productRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
         apply(p, form);
+        applyImage(p, form, imageFile, true);
         productRepository.save(p);
     }
 
@@ -77,6 +81,23 @@ public class AdminProductServiceImpl implements AdminProductService {
                 .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
         p.setIsActive(active);
         productRepository.save(p);
+    }
+
+    private void applyImage(Product p, ProductFormDto form, MultipartFile imageFile, boolean isUpdate) {
+        String stored = productImageStorageService.store(imageFile);
+        if (stored != null) {
+            p.setImageUrl(stored);
+            return;
+        }
+        String url = blankToNull(form.imageUrl());
+        if (url != null) {
+            p.setImageUrl(url);
+            return;
+        }
+        if (!isUpdate) {
+            p.setImageUrl(null);
+        }
+        // update sin archivo ni URL: no tocar p.imageUrl (o si quieres borrar, pon null)
     }
 
     private Product mapNew(ProductFormDto form) {
