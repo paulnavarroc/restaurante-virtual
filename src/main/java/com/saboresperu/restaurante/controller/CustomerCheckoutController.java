@@ -6,6 +6,7 @@ import com.saboresperu.restaurante.dto.CheckoutRequestDto;
 import com.saboresperu.restaurante.entity.Customer;
 import com.saboresperu.restaurante.entity.Order;
 import com.saboresperu.restaurante.service.interfaces.*;
+import com.saboresperu.restaurante.util.HelperUtils;
 import com.saboresperu.restaurante.util.SecurityUtils;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -31,6 +32,7 @@ public class CustomerCheckoutController {
     private final AddressService addressService;
     private final SecurityUtils securityUtils;
     private final PaymentService paymentService;
+    private final HelperUtils helperUtils;
 
     @GetMapping("/checkout")
     public String checkoutForm(@RequestParam(required = false) Integer addressId,
@@ -38,8 +40,14 @@ public class CustomerCheckoutController {
                                HttpSession session,
                                Model model) {
         Customer customer = customerService.requireByUserEmail(securityUtils.currentEmail());
-        var cart = cartService.getCart(session);
+
+        Integer branchId = helperUtils.resolveDefaultBranchId();
+        var result = cartService.refreshForCustomer(session, customer.getId(), branchId);
+        var cart = result.cart();
         if (cart == null || cart.isEmpty()) {
+            if (result.hasChanges()) {
+                // flash opcional: productos quitados del menú
+            }
             return "redirect:/customer/cart";
         }
 
@@ -88,7 +96,7 @@ public class CustomerCheckoutController {
         try {
             Integer userId = customer.getUser().getId();
             Order order = orderService.placeOrder(customer.getId(), form, cart, userId);
-            cartService.clear(session);
+            cartService.clearPersisted(customer.getId(), session);
             ra.addFlashAttribute("mensaje", "Pedido #" + order.getId() + " registrado");
             return "redirect:/customer/orders/" + order.getId();
         } catch (RuntimeException ex) {

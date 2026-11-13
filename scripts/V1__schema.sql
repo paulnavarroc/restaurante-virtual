@@ -440,8 +440,27 @@ CREATE TABLE dbo.CouponUsages (
 GO
 
 /* =========================================================
-   7. Orders
+   7. Cart items  & Orders
    ========================================================= */
+
+CREATE TABLE dbo.CartItems (
+    IdCartItem      INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_CartItems PRIMARY KEY,
+    IdCustomer      INT NOT NULL,
+    IdProduct       INT NOT NULL,
+    IdDailyMenuItem INT NULL,
+    Quantity        INT NOT NULL,
+    UnitPrice       DECIMAL(10,2) NOT NULL,
+    ProductName     NVARCHAR(150) NOT NULL,
+    ImageUrl        NVARCHAR(500) NULL,
+    UpdatedAt       DATETIME2 NOT NULL CONSTRAINT DF_CartItems_UpdatedAt DEFAULT SYSUTCDATETIME(),
+    CONSTRAINT FK_CartItems_Customer FOREIGN KEY (IdCustomer) REFERENCES dbo.Customers(IdCustomer),
+    CONSTRAINT FK_CartItems_Product  FOREIGN KEY (IdProduct)  REFERENCES dbo.Products(IdProduct),
+    CONSTRAINT CK_CartItems_Qty CHECK (Quantity > 0)
+);
+GO
+
+CREATE INDEX IX_CartItems_Customer ON dbo.CartItems (IdCustomer);
+GO
 
 CREATE TABLE dbo.OrderStatuses (
     IdOrderStatus   INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_OrderStatuses PRIMARY KEY,

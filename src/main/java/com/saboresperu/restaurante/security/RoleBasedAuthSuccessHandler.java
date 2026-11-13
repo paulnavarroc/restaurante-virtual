@@ -3,9 +3,13 @@ package com.saboresperu.restaurante.security;
 import com.saboresperu.restaurante.domain.SecuritySessionKeys;
 import com.saboresperu.restaurante.domain.SessionUserKeys;
 import com.saboresperu.restaurante.dto.SessionAuthorizationDto;
+import com.saboresperu.restaurante.repository.BranchRepository;
+import com.saboresperu.restaurante.repository.CourierRepository;
 import com.saboresperu.restaurante.repository.UserRepository;
-import com.saboresperu.restaurante.service.impl.AccessAuditServiceImpl;
+import com.saboresperu.restaurante.service.interfaces.AccessAuditService;
+import com.saboresperu.restaurante.service.interfaces.CartService;
 import com.saboresperu.restaurante.service.interfaces.EffectivePermissionService;
+import com.saboresperu.restaurante.util.HelperUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -24,7 +28,11 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
 
     private final UserRepository userRepository;
     private final EffectivePermissionService effectivePermissionService;
-    private final AccessAuditServiceImpl accessAuditService;
+    private final AccessAuditService accessAuditService;
+    private final CourierRepository customerRepository;
+    private final BranchRepository branchRepository;
+    private final CartService cartService;
+    private final HelperUtils helperUtils;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
@@ -54,6 +62,20 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
 
             String sessionId = request.getSession(true).getId();
             accessAuditService.loginSuccess(user.getId(), user.getEmail(), request, sessionId);
+
+            customerRepository.findByUserId(user.getId()).ifPresent(customer -> {
+                Integer branchId = branchRepository.findAll().stream()
+                        .filter(b -> Boolean.TRUE.equals(b.getIsActive()))
+                        .map(b -> b.getId())
+                        .findFirst()
+                        .orElse(null); // o la sede en el menú público
+
+                var result = cartService.mergeAndLoadForCustomer(session, customer.getId(), branchId);
+
+                if (result.hasChanges()) {
+                    session.setAttribute("CART_NOTICE", helperUtils.buildNotice(result));
+                }
+            });
         });
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
@@ -69,6 +91,7 @@ public class RoleBasedAuthSuccessHandler implements AuthenticationSuccessHandler
             response.sendRedirect(request.getContextPath() + "/courier/deliveries");
             return;
         }
+
 
         response.sendRedirect(request.getContextPath() + "/menu");
     }
