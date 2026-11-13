@@ -156,4 +156,19 @@ public class AdminDailyMenuController {
         }
         return "redirect:/admin/daily-menus/" + id;
     }
+
+    @PostMapping("/{id}/copy")
+    @PreAuthorize("hasAuthority('PERM_DAILY_MENU_MANAGE')")
+    public String copy(@PathVariable Integer id,
+                       @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate targetDate,
+                       RedirectAttributes ra) {
+        try {
+            Integer newId = adminDailyMenuService.copyToDate(id, targetDate);
+            ra.addFlashAttribute("mensaje", "Menú copiado como borrador para " + targetDate);
+            return "redirect:/admin/daily-menus/" + newId;
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+            return "redirect:/admin/daily-menus/" + id;
+        }
+    }
 }

@@ -2,6 +2,7 @@ package com.saboresperu.restaurante.service.interfaces;
 
 import com.saboresperu.restaurante.dto.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface AdminDailyMenuService {
@@ -15,4 +16,5 @@ public interface AdminDailyMenuService {
     void removeItem(Integer dailyMenuId, Integer itemId);
     void publish(Integer dailyMenuId, Integer userId);
     void close(Integer dailyMenuId);
+    Integer copyToDate(Integer sourceMenuId, LocalDate targetDate);
 }

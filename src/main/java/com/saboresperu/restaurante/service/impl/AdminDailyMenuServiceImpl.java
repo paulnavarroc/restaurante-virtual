@@ -12,10 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -203,6 +201,75 @@ public class AdminDailyMenuServiceImpl implements AdminDailyMenuService {
         item.getShifts().clear();
         item.getShifts().addAll(selected);
         dailyMenuItemRepository.save(item);
+    }
+
+    @Override
+    @Transactional
+    public Integer copyToDate(Integer sourceMenuId, java.time.LocalDate targetDate) {
+        if (targetDate == null) {
+            throw new IllegalArgumentException("Indica la fecha destino");
+        }
+
+        DailyMenu source = dailyMenuRepository.findByIdWithItemsAndProduct(sourceMenuId)
+                .orElseThrow(() -> new IllegalArgumentException("Menú origen no encontrado"));
+
+        Integer branchId = source.getBranch().getId();
+
+        dailyMenuRepository.findByBranchIdAndMenuDate(branchId, targetDate)
+                .ifPresent(m -> {
+                    throw new IllegalArgumentException(
+                            "Ya existe un menú para esa sede el " + targetDate);
+                });
+
+        DailyMenu target = DailyMenu.builder()
+                .branch(source.getBranch())
+                .menuDate(targetDate)
+                .status(DailyMenuStatuses.DRAFT)
+                .items(new ArrayList<>())
+                .build();
+        target = dailyMenuRepository.save(target);
+
+        if (source.getItems() == null || source.getItems().isEmpty()) {
+            return target.getId();
+        }
+
+        // Turnos de la sede (para remapear por código de turno)
+        List<BranchShift> branchShifts = branchShiftRepository.findByBranchIdAndIsActiveTrue(branchId);
+
+        for (DailyMenuItem srcItem : source.getItems()) {
+            // Forzar carga de producto / turnos dentro de la transacción
+            Product product = srcItem.getProduct();
+            if (product == null || !Boolean.TRUE.equals(product.getIsActive())) {
+                continue;
+            }
+
+            DailyMenuItem copy = DailyMenuItem.builder()
+                    .dailyMenu(target)
+                    .product(product)
+                    .isAvailable(Boolean.TRUE.equals(srcItem.getIsAvailable()))
+                    .priceOverride(srcItem.getPriceOverride())
+                    .maxQuota(srcItem.getMaxQuota())
+                    .soldQuantity(0) // siempre 0 en el día nuevo
+                    .shifts(new HashSet<>())
+                    .build();
+
+            if (srcItem.getShifts() != null && !srcItem.getShifts().isEmpty()) {
+                Set<String> codes = srcItem.getShifts().stream()
+                        .map(BranchShift::getShift)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                for (BranchShift bs : branchShifts) {
+                    if (codes.contains(bs.getShift())) {
+                        copy.getShifts().add(bs);
+                    }
+                }
+            }
+
+            dailyMenuItemRepository.save(copy);
+            target.getItems().add(copy);
+        }
+
+        return target.getId();
     }
 
     private static String shiftLabel(String code) {

@@ -35,6 +35,13 @@
                     </td>
                     <td class="px-4 py-3" th:text="${m.itemCount()}"></td>
                     <td class="px-4 py-3 text-right">
+                        <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
+                              th:action="@{/admin/daily-menus/{id}/copy(id=${m.id()})}"
+                              method="post" class="inline-flex items-center gap-1">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                            <input type="date" name="targetDate" required class="rounded border px-1 py-0.5 text-xs">
+                            <button type="submit" class="text-xs text-sky-600 hover:underline">Copiar</button>
+                        </form>
                         <a th:href="@{/admin/daily-menus/{id}(id=${m.id()})}" class="text-sky-600 hover:underline">Abrir</a>
                     </td>
                 </tr>

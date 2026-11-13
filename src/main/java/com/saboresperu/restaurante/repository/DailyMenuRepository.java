@@ -63,4 +63,14 @@ public interface DailyMenuRepository extends JpaRepository<DailyMenu, Integer> {
          AND m.status = 'PUBLISHED'
        """)
     Optional<DailyMenu> findPublishedWithProducts(@Param("branchId") Integer branchId, @Param("menuDate") LocalDate menuDate);
+
+    @Query("""
+       SELECT DISTINCT m FROM DailyMenu m
+       JOIN FETCH m.branch
+       LEFT JOIN FETCH m.items i
+       LEFT JOIN FETCH i.product
+       LEFT JOIN FETCH i.shifts
+       WHERE m.id = :id
+       """)
+    Optional<DailyMenu> findByIdWithItemsProductAndShifts(@Param("id") Integer id);
 }

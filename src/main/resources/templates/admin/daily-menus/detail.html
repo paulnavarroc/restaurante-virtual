@@ -28,6 +28,19 @@
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
                 <button class="rounded-xl border border-slate-200 px-4 py-2 text-sm">Cerrar</button>
             </form>
+            <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
+                  th:action="@{/admin/daily-menus/{id}/copy(id=${menu.id()})}"
+                  method="post"
+                  class="flex flex-wrap items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <div>
+                    <label class="mb-0.5 block text-[11px] font-medium text-slate-500">Copiar a fecha</label>
+                    <input type="date" name="targetDate" required class="rounded-lg border border-slate-300 px-2 py-1.5 text-sm">
+                </div>
+                <button type="submit" class="rounded-xl bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-sky-700">
+                    <i class="bi bi-copy"></i> Copiar menú
+                </button>
+            </form>
         </div>
     </div>
 
