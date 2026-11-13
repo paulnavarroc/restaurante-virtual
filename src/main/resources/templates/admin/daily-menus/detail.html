@@ -16,18 +16,55 @@
             <span class="mt-1 inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold" th:text="${menu.status()}"></span>
         </div>
         <div class="flex flex-wrap gap-2">
+            <!-- Solo borrador (o cerrado si publicas directo; aquí publicamos solo desde DRAFT) -->
             <form sec:authorize="hasAuthority('PERM_DAILY_MENU_PUBLISH')"
-                  th:if="${menu.status() == 'DRAFT' or menu.status() == 'PUBLISHED'}"
+                  th:if="${menu.status() == 'DRAFT'}"
                   th:action="@{/admin/daily-menus/{id}/publish(id=${menu.id()})}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white">Publicar</button>
+                <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                    Publicar
+                </button>
             </form>
+
+            <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
+                  th:if="${menu.status() == 'PUBLISHED'}"
+                  th:action="@{/admin/daily-menus/{id}/unpublish(id=${menu.id()})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="rounded-xl border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-900">
+                    Despublicar
+                </button>
+            </form>
+
             <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
                   th:if="${menu.status() != 'CLOSED'}"
                   th:action="@{/admin/daily-menus/{id}/close(id=${menu.id()})}" method="post">
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
-                <button class="rounded-xl border border-slate-200 px-4 py-2 text-sm">Cerrar</button>
+                <button type="submit" class="rounded-xl border border-slate-200 px-4 py-2 text-sm hover:bg-slate-50">
+                    Cerrar
+                </button>
             </form>
+
+            <!-- Cerrado por error → volver a borrador -->
+            <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
+                  th:if="${menu.status() == 'CLOSED'}"
+                  th:action="@{/admin/daily-menus/{id}/reopen(id=${menu.id()})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+                    Reabrir (borrador)
+                </button>
+            </form>
+
+            <!-- Tras reabrir, si quieres publicar en un clic desde CLOSED: -->
+            <form sec:authorize="hasAuthority('PERM_DAILY_MENU_PUBLISH')"
+                  th:if="${menu.status() == 'CLOSED'}"
+                  th:action="@{/admin/daily-menus/{id}/publish(id=${menu.id()})}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                <button type="submit" class="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">
+                    Reabrir y publicar
+                </button>
+            </form>
+
+
             <form sec:authorize="hasAuthority('PERM_DAILY_MENU_MANAGE')"
                   th:action="@{/admin/daily-menus/{id}/copy(id=${menu.id()})}"
                   method="post"

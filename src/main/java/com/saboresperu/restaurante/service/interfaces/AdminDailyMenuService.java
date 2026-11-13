@@ -15,6 +15,8 @@ public interface AdminDailyMenuService {
     void updateItem(Integer dailyMenuId, Integer itemId, DailyMenuItemRequest request);
     void removeItem(Integer dailyMenuId, Integer itemId);
     void publish(Integer dailyMenuId, Integer userId);
+    void unpublish(Integer dailyMenuId);   // PUBLISHED → DRAFT
+    void reopen(Integer dailyMenuId);      // CLOSED → DRAFT
     void close(Integer dailyMenuId);
     Integer copyToDate(Integer sourceMenuId, LocalDate targetDate);
 }

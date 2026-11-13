@@ -145,6 +145,30 @@ public class AdminDailyMenuController {
         return "redirect:/admin/daily-menus/" + id;
     }
 
+    @PostMapping("/{id}/unpublish")
+    @PreAuthorize("hasAuthority('PERM_DAILY_MENU_MANAGE')")
+    public String unpublish(@PathVariable Integer id, RedirectAttributes ra) {
+        try {
+            adminDailyMenuService.unpublish(id);
+            ra.addFlashAttribute("mensaje", "Menú pasado a borrador");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/admin/daily-menus/" + id;
+    }
+
+    @PostMapping("/{id}/reopen")
+    @PreAuthorize("hasAuthority('PERM_DAILY_MENU_MANAGE')")
+    public String reopen(@PathVariable Integer id, RedirectAttributes ra) {
+        try {
+            adminDailyMenuService.reopen(id);
+            ra.addFlashAttribute("mensaje", "Menú reabierto como borrador. Ya puedes editarlo o publicarlo de nuevo.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("error", ex.getMessage());
+        }
+        return "redirect:/admin/daily-menus/" + id;
+    }
+
     @PostMapping("/{id}/close")
     @PreAuthorize("hasAuthority('PERM_DAILY_MENU_MANAGE')")
     public String close(@PathVariable Integer id, RedirectAttributes ra) {

@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -138,12 +139,46 @@ public class AdminDailyMenuServiceImpl implements AdminDailyMenuService {
     public void publish(Integer dailyMenuId, Integer userId) {
         DailyMenu menu = dailyMenuRepository.findByIdWithItemsAndProduct(dailyMenuId)
                 .orElseThrow(() -> new IllegalArgumentException("Menú no encontrado"));
+
+        if (DailyMenuStatuses.PUBLISHED.equals(menu.getStatus())) {
+            throw new IllegalArgumentException("El menú ya está publicado");
+        }
+        // Permitir publicar desde DRAFT o desde CLOSED (reapertura + publicación)
+        if (!DailyMenuStatuses.DRAFT.equals(menu.getStatus())
+                && !DailyMenuStatuses.CLOSED.equals(menu.getStatus())) {
+            throw new IllegalArgumentException("Estado no válido para publicar: " + menu.getStatus());
+        }
+
+        LocalDate today = LocalDate.now();
+        if (menu.getMenuDate() == null) {
+            throw new IllegalArgumentException("El menú no tiene fecha");
+        }
+        if (menu.getMenuDate().isBefore(today)) {
+            throw new IllegalArgumentException(
+                    "No se puede publicar un menú con fecha pasada (" + menu.getMenuDate() + ")");
+        }
+        // para solo limitar a publicar el día actual, descomentar
+        // if (!menu.getMenuDate().equals(today)) {
+        //     throw new IllegalArgumentException("Solo se puede publicar el menú de hoy");
+        // }
+
         if (menu.getItems() == null || menu.getItems().isEmpty()) {
             throw new IllegalArgumentException("No puedes publicar un menú sin productos");
         }
-        if (DailyMenuStatuses.CLOSED.equals(menu.getStatus())) {
-            throw new IllegalArgumentException("El menú está cerrado");
+
+        // Opcional: un solo PUBLISHED “activo” por sede para HOY
+        // (otros menús de la misma sede y misma fecha no deberían existir por unique)
+        if (menu.getMenuDate().equals(today)) {
+            dailyMenuRepository
+                    .findPublishedWithItems(menu.getBranch().getId(), today, DailyMenuStatuses.PUBLISHED)
+                    .ifPresent(other -> {
+                        if (!other.getId().equals(menu.getId())) {
+                            other.setStatus(DailyMenuStatuses.CLOSED);
+                            dailyMenuRepository.save(other);
+                        }
+                    });
         }
+
         menu.setStatus(DailyMenuStatuses.PUBLISHED);
         menu.setPublishedAt(LocalDateTime.now());
         if (userId != null) {
@@ -154,9 +189,36 @@ public class AdminDailyMenuServiceImpl implements AdminDailyMenuService {
 
     @Override
     @Transactional
+    public void unpublish(Integer dailyMenuId) {
+        DailyMenu menu = dailyMenuRepository.findById(dailyMenuId)
+                .orElseThrow(() -> new IllegalArgumentException("Menú no encontrado"));
+        if (!DailyMenuStatuses.PUBLISHED.equals(menu.getStatus())) {
+            throw new IllegalArgumentException("Solo se puede despublicar un menú publicado");
+        }
+        menu.setStatus(DailyMenuStatuses.DRAFT);
+        dailyMenuRepository.save(menu);
+    }
+
+    @Override
+    @Transactional
+    public void reopen(Integer dailyMenuId) {
+        DailyMenu menu = dailyMenuRepository.findById(dailyMenuId)
+                .orElseThrow(() -> new IllegalArgumentException("Menú no encontrado"));
+        if (!DailyMenuStatuses.CLOSED.equals(menu.getStatus())) {
+            throw new IllegalArgumentException("Solo se puede reabrir un menú cerrado");
+        }
+        menu.setStatus(DailyMenuStatuses.DRAFT);
+        dailyMenuRepository.save(menu);
+    }
+
+    @Override
+    @Transactional
     public void close(Integer dailyMenuId) {
         DailyMenu menu = dailyMenuRepository.findById(dailyMenuId)
                 .orElseThrow(() -> new IllegalArgumentException("Menú no encontrado"));
+        if (DailyMenuStatuses.CLOSED.equals(menu.getStatus())) {
+            throw new IllegalArgumentException("El menú ya está cerrado");
+        }
         menu.setStatus(DailyMenuStatuses.CLOSED);
         dailyMenuRepository.save(menu);
     }
