@@ -58,7 +58,7 @@ public class AdminAuditController {
         model.addAttribute("page", page);
         model.addAttribute("size", size);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size);
 
         if ("security".equals(tab)) {
             Page<SecurityAuditRowDto> result = accessAuditService.pageSecurityAudits(pageable);
