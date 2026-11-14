@@ -11,7 +11,9 @@ import com.saboresperu.restaurante.repository.UserRepository;
 import com.saboresperu.restaurante.service.interfaces.AccessAuditService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -138,6 +140,46 @@ public class AccessAuditServiceImpl implements AccessAuditService {
                     );
                 })
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AccessLogRowDto> pageAccessLogs(Pageable pageable) {
+        return userAccessLogRepository.findAllPaged(pageable).map(a -> {
+            User u = a.getUser();
+            String name = u != null ? (u.getFirstName() + " " + u.getLastName()).trim() : null;
+            return new AccessLogRowDto(
+                    a.getId(),
+                    a.getEmailAttempted(),
+                    name,
+                    a.getEventType(),
+                    Boolean.TRUE.equals(a.getIsSuccess()),
+                    a.getIp(),
+                    a.getBrowser(),
+                    a.getOperatingSystem(),
+                    a.getDevice(),
+                    a.getDetail(),
+                    a.getCreatedAt()
+            );
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<SecurityAuditRowDto> pageSecurityAudits(Pageable pageable) {
+        return securityAuditLogRepository.findAllPaged(pageable).map(s -> {
+            User u = s.getUser();
+            return new SecurityAuditRowDto(
+                    s.getId(),
+                    u != null ? u.getEmail() : null,
+                    u != null ? (u.getFirstName() + " " + u.getLastName()).trim() : null,
+                    s.getAction(),
+                    s.getEntityType(),
+                    s.getEntityId(),
+                    s.getDetail(),
+                    s.getCreatedAt()
+            );
+        });
     }
 
     private static String trim(String s, int max) {

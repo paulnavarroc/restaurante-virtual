@@ -2,95 +2,184 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
-      layout:decorate="~{layout/admin}" lang="es">
-<head><title>Auditoría</title></head>
+      layout:decorate="~{layout/admin}"
+      lang="es">
+<head>
+    <title>Auditoría</title>
+</head>
 <body>
 <section layout:fragment="content">
-    <div class="mb-6">
-        <h1 class="text-xl font-bold text-slate-900">Auditoría</h1>
-        <p class="text-sm text-slate-500">Accesos al sistema y cambios de seguridad</p>
+
+    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Auditoría</h1>
+            <p class="text-sm text-slate-500">Accesos al sistema y cambios de seguridad</p>
+        </div>
+
+        <!-- Tamaño de página -->
+        <form method="get" th:action="@{/admin/audit}" class="flex items-center gap-2 text-sm">
+            <input type="hidden" name="tab" th:value="${tab}"/>
+            <input type="hidden" name="page" value="0"/>
+            <label class="text-slate-500">Por página</label>
+            <select name="size"
+                    onchange="this.form.submit()"
+                    class="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100">
+                <option th:selected="${size == 10}" value="10">10</option>
+                <option th:selected="${size == 20}" value="20">20</option>
+                <option th:selected="${size == 50}" value="50">50</option>
+                <option th:selected="${size == 100}" value="100">100</option>
+            </select>
+        </form>
     </div>
 
+    <!-- Tabs -->
     <div class="mb-4 flex gap-2 border-b border-slate-200">
         <a sec:authorize="hasAuthority('PERM_ACCESS_LOGS_VIEW')"
-           th:href="@{/admin/audit(tab=access)}"
-           th:classappend="${tab == 'access'} ? 'border-sky-600 text-sky-700' : 'border-transparent text-slate-500'"
-           class="border-b-2 px-4 py-2 text-sm font-medium">Accesos</a>
+           th:href="@{/admin/audit(tab=access, page=0, size=${size})}"
+           th:classappend="${tab == 'access'} ? 'border-sky-600 text-sky-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
+           class="border-b-2 px-4 py-2 text-sm font-medium transition">
+            Accesos
+        </a>
         <a sec:authorize="hasAuthority('PERM_SECURITY_AUDIT_VIEW')"
-           th:href="@{/admin/audit(tab=security)}"
-           th:classappend="${tab == 'security'} ? 'border-sky-600 text-sky-700' : 'border-transparent text-slate-500'"
-           class="border-b-2 px-4 py-2 text-sm font-medium">Seguridad</a>
+           th:href="@{/admin/audit(tab=security, page=0, size=${size})}"
+           th:classappend="${tab == 'security'} ? 'border-sky-600 text-sky-700' : 'border-transparent text-slate-500 hover:text-slate-700'"
+           class="border-b-2 px-4 py-2 text-sm font-medium transition">
+            Seguridad
+        </a>
     </div>
 
-    <!-- Accesos -->
-    <div th:if="${tab == 'access'}" class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
-        <table class="min-w-full text-left text-sm">
-            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-                <th class="px-4 py-3">Fecha</th>
-                <th class="px-4 py-3">Evento</th>
-                <th class="px-4 py-3">Usuario</th>
-                <th class="px-4 py-3">IP</th>
-                <th class="px-4 py-3">Cliente</th>
-                <th class="px-4 py-3">Detalle</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="a : ${accessLogs}" class="border-b border-slate-100">
-                <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap"
-                    th:text="${a.createdAt() != null} ? ${#temporals.format(a.createdAt(), 'dd/MM/yyyy HH:mm:ss')} : '—'"></td>
-                <td class="px-4 py-3">
-                    <span th:classappend="${a.success()} ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'"
-                          class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                          th:text="${a.eventType()}"></span>
-                </td>
-                <td class="px-4 py-3">
-                    <div th:text="${a.userFullName() != null ? a.userFullName() : '—'}"></div>
-                    <div class="text-xs text-slate-400" th:text="${a.email()}"></div>
-                </td>
-                <td class="px-4 py-3 font-mono text-xs" th:text="${a.ip()}"></td>
-                <td class="px-4 py-3 text-xs"
-                    th:text="${(a.browser() != null ? a.browser() : '') + ' · ' + (a.operatingSystem() != null ? a.operatingSystem() : '') + ' · ' + (a.device() != null ? a.device() : '')}"></td>
-                <td class="px-4 py-3 text-xs text-slate-500" th:text="${a.detail()}"></td>
-            </tr>
-            <tr th:if="${accessLogs == null or #lists.isEmpty(accessLogs)}">
-                <td colspan="6" class="px-4 py-10 text-center text-slate-500">Sin registros</td>
-            </tr>
-            </tbody>
-        </table>
+    <!-- ========== ACCESOS ========== -->
+    <div th:if="${tab == 'access'}">
+        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Fecha</th>
+                    <th class="px-4 py-3">Evento</th>
+                    <th class="px-4 py-3">Usuario</th>
+                    <th class="px-4 py-3">IP</th>
+                    <th class="px-4 py-3">Cliente</th>
+                    <th class="px-4 py-3">Detalle</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="a : ${accessLogs}" class="border-b border-slate-100 hover:bg-slate-50/60">
+                    <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-500"
+                        th:text="${a.createdAt() != null} ? ${#temporals.format(a.createdAt(), 'dd/MM/yyyy HH:mm:ss')} : '—'">
+                    </td>
+                    <td class="px-4 py-3">
+                        <span th:classappend="${a.success()} ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'"
+                              class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                              th:text="${a.eventType()}">LOGIN</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-800"
+                             th:text="${a.userFullName() != null and !#strings.isEmpty(a.userFullName()) ? a.userFullName() : '—'}">—</div>
+                        <div class="text-xs text-slate-400" th:text="${a.email()}">email</div>
+                    </td>
+                    <td class="px-4 py-3 font-mono text-xs text-slate-600" th:text="${a.ip()}">—</td>
+                    <td class="px-4 py-3 text-xs text-slate-600"
+                        th:text="${(a.browser() != null ? a.browser() : '—')
+                                  + ' · ' + (a.operatingSystem() != null ? a.operatingSystem() : '—')
+                                  + ' · ' + (a.device() != null ? a.device() : '—')}">
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-500" th:text="${a.detail() != null ? a.detail() : '—'}">—</td>
+                </tr>
+                <tr th:if="${accessLogs == null or #lists.isEmpty(accessLogs)}">
+                    <td colspan="6" class="px-4 py-12 text-center text-slate-500">Sin registros de acceso</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
-    <!-- Seguridad -->
-    <div th:if="${tab == 'security'}" class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
-        <table class="min-w-full text-left text-sm">
-            <thead class="border-b bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-                <th class="px-4 py-3">Fecha</th>
-                <th class="px-4 py-3">Acción</th>
-                <th class="px-4 py-3">Entidad</th>
-                <th class="px-4 py-3">Actor</th>
-                <th class="px-4 py-3">Detalle</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr th:each="s : ${securityLogs}" class="border-b border-slate-100">
-                <td class="px-4 py-3 text-xs text-slate-500 whitespace-nowrap"
-                    th:text="${s.createdAt() != null} ? ${#temporals.format(s.createdAt(), 'dd/MM/yyyy HH:mm:ss')} : '—'"></td>
-                <td class="px-4 py-3 font-medium" th:text="${s.action()}"></td>
-                <td class="px-4 py-3 text-xs"
-                    th:text="${s.entityType() + (s.entityId() != null ? ' #' + s.entityId() : '')}"></td>
-                <td class="px-4 py-3">
-                    <div th:text="${s.userFullName() != null ? s.userFullName() : '—'}"></div>
-                    <div class="text-xs text-slate-400" th:text="${s.userEmail()}"></div>
-                </td>
-                <td class="px-4 py-3 text-xs text-slate-600" th:text="${s.detail()}"></td>
-            </tr>
-            <tr th:if="${securityLogs == null or #lists.isEmpty(securityLogs)}">
-                <td colspan="5" class="px-4 py-10 text-center text-slate-500">Sin registros</td>
-            </tr>
-            </tbody>
-        </table>
+    <!-- ========== SEGURIDAD ========== -->
+    <div th:if="${tab == 'security'}">
+        <div class="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table class="min-w-full text-left text-sm">
+                <thead class="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                    <th class="px-4 py-3">Fecha</th>
+                    <th class="px-4 py-3">Acción</th>
+                    <th class="px-4 py-3">Entidad</th>
+                    <th class="px-4 py-3">Actor</th>
+                    <th class="px-4 py-3">Detalle</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${securityLogs}" class="border-b border-slate-100 hover:bg-slate-50/60">
+                    <td class="px-4 py-3 whitespace-nowrap text-xs text-slate-500"
+                        th:text="${s.createdAt() != null} ? ${#temporals.format(s.createdAt(), 'dd/MM/yyyy HH:mm:ss')} : '—'">
+                    </td>
+                    <td class="px-4 py-3 font-medium text-slate-800" th:text="${s.action()}">—</td>
+                    <td class="px-4 py-3 text-xs text-slate-600"
+                        th:text="${s.entityType() + (s.entityId() != null ? ' #' + s.entityId() : '')}">—</td>
+                    <td class="px-4 py-3">
+                        <div class="font-medium text-slate-800"
+                             th:text="${s.userFullName() != null and !#strings.isEmpty(s.userFullName()) ? s.userFullName() : '—'}">—</div>
+                        <div class="text-xs text-slate-400" th:text="${s.userEmail()}">email</div>
+                    </td>
+                    <td class="px-4 py-3 text-xs text-slate-600" th:text="${s.detail() != null ? s.detail() : '—'}">—</td>
+                </tr>
+                <tr th:if="${securityLogs == null or #lists.isEmpty(securityLogs)}">
+                    <td colspan="5" class="px-4 py-12 text-center text-slate-500">Sin registros de seguridad</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <!-- ========== PAGINACIÓN (común a ambos tabs) ========== -->
+    <div th:if="${pageData != null and pageData.totalPages > 0}"
+         class="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+
+        <p class="text-slate-500">
+            Página
+            <span class="font-semibold text-slate-800" th:text="${pageData.number + 1}">1</span>
+            de
+            <span class="font-semibold text-slate-800" th:text="${pageData.totalPages}">1</span>
+            ·
+            <span th:text="${pageData.totalElements}">0</span> registros
+        </p>
+
+        <div class="flex flex-wrap items-center gap-1.5">
+            <!-- Anterior -->
+            <a th:if="${pageData.hasPrevious()}"
+               th:href="@{/admin/audit(tab=${tab}, page=${pageData.number - 1}, size=${size})}"
+               class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+                ← Anterior
+            </a>
+            <span th:if="${!pageData.hasPrevious()}"
+                  class="cursor-not-allowed rounded-lg border border-slate-100 px-3 py-1.5 text-slate-300">
+                ← Anterior
+            </span>
+
+            <!-- Números (ventana ±2 alrededor de la página actual) -->
+            <th:block th:if="${pageData.totalPages > 0}"
+                      th:each="i : ${#numbers.sequence(0, pageData.totalPages - 1)}">
+                <a th:if="${i >= pageData.number - 2 and i <= pageData.number + 2}"
+                   th:href="@{/admin/audit(tab=${tab}, page=${i}, size=${size})}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == pageData.number}
+                       ? 'border-sky-600 bg-sky-600 text-white'
+                       : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'"
+                   class="inline-flex h-8 min-w-8 items-center justify-center rounded-lg border px-2 text-sm font-medium">
+                </a>
+            </th:block>
+
+            <!-- Siguiente -->
+            <a th:if="${pageData.hasNext()}"
+               th:href="@{/admin/audit(tab=${tab}, page=${pageData.number + 1}, size=${size})}"
+               class="rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+                Siguiente →
+            </a>
+            <span th:if="${!pageData.hasNext()}"
+                  class="cursor-not-allowed rounded-lg border border-slate-100 px-3 py-1.5 text-slate-300">
+                Siguiente →
+            </span>
+        </div>
+    </div>
+
 </section>
 </body>
 </html>

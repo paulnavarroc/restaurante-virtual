@@ -1,6 +1,7 @@
 package com.saboresperu.restaurante.repository;
 
 import com.saboresperu.restaurante.entity.UserAccessLog;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +18,11 @@ public interface UserAccessLogRepository extends JpaRepository<UserAccessLog, Lo
            ORDER BY a.createdAt DESC
            """)
     List<UserAccessLog> findRecientes(Pageable pageable);
+
+    @Query("""
+       SELECT a FROM UserAccessLog a
+       LEFT JOIN FETCH a.user
+       ORDER BY a.createdAt DESC
+       """)
+    Page<UserAccessLog> findAllPaged(Pageable pageable);
 }
