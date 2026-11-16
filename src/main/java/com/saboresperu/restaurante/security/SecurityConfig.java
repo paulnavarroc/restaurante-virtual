@@ -86,11 +86,32 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .exceptionHandling(ex -> ex
-                        .accessDeniedPage("/error/403")
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            if (request.getRequestURI().startsWith(request.getContextPath() + "/api/")
+                                    || request.getRequestURI().startsWith("/api/")) {
+                                response.setStatus(403);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"ok\":false,\"message\":\"Acceso denegado\"}");
+                            } else {
+                                response.sendRedirect(request.getContextPath() + "/error/403");
+                            }
+                        })
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            if (request.getRequestURI().contains("/api/")) {
+                                response.setStatus(401);
+                                response.setContentType("application/json;charset=UTF-8");
+                                response.getWriter().write("{\"ok\":false,\"message\":\"No autenticado\"}");
+                            } else {
+                                response.sendRedirect(request.getContextPath() + "/login");
+                            }
+                        })
                 )
-                .csrf(csrf -> csrf
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                )
+                .csrf(csrf -> {
+                    CookieCsrfTokenRepository repo = CookieCsrfTokenRepository.withHttpOnlyFalse();
+                    repo.setCookiePath("/");
+                    csrf.csrfTokenRepository(repo);
+                    csrf.csrfTokenRequestHandler(new org.springframework.security.web.csrf.XorCsrfTokenRequestAttributeHandler());
+                })
                 .sessionManagement(session -> session
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false)

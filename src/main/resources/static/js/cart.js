@@ -1,14 +1,26 @@
 (function () {
     function csrfHeaders() {
+        const h = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        };
+
+        // Preferido con CookieCsrfTokenRepository
+        const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]*)/);
+        if (m) {
+            h['X-XSRF-TOKEN'] = decodeURIComponent(m[1]);
+        }
+
+        // Respaldo meta (si existe)
         const token = document.querySelector('meta[name="_csrf"]')?.content;
-        const header = document.querySelector('meta[name="_csrf_header"]')?.content || 'X-CSRF-TOKEN';
-        const h = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-        if (token) h[header] = token;
-        // CookieCsrfTokenRepository también acepta X-XSRF-TOKEN desde cookie
-        const m = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
-        if (m) h['X-XSRF-TOKEN'] = decodeURIComponent(m[1]);
+        const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+        if (token && header) {
+            h[header] = token;
+        }
+
         return h;
     }
+
 
     function updateBadges(count) {
         document.querySelectorAll('[data-cart-count]').forEach(function (el) {

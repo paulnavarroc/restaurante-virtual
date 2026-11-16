@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 @Controller
 public class AppErrorController implements ErrorController {
@@ -43,12 +44,9 @@ public class AppErrorController implements ErrorController {
         return "error/generic";
     }
 
-    @GetMapping("/error/403")
+    @RequestMapping(value = "/error/403", method = {RequestMethod.GET, RequestMethod.POST})
     public String forbidden(Model model) {
         model.addAttribute("titulo", "Acceso denegado");
-        model.addAttribute("title", "Acceso denegado");
-        model.addAttribute("message", "No tienes permiso para ver este recurso.");
-        model.addAttribute("statusCode", 403);
         return "error/403";
     }
 }
