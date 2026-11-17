@@ -45,7 +45,8 @@ public class ProductServiceImpl implements ProductService {
                 p.getPrepTimeMinutes(),
                 Boolean.TRUE.equals(p.getIsActive()),
                 false,
-                null
+                null,
+                java.util.List.of()
         );
     }
 }

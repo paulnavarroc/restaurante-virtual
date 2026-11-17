@@ -1,10 +1,11 @@
 package com.saboresperu.restaurante.dto;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProductCardDto(
         Integer id,
-        Integer dailyMenuItemId,
+        Integer dailyMenuItemId,   // null si hay varias sedes
         String name,
         String description,
         BigDecimal listPrice,
@@ -16,5 +17,6 @@ public record ProductCardDto(
         Integer prepTimeMinutes,
         boolean available,
         boolean soldOut,
-        Integer remainingQuota
+        Integer remainingQuota,
+        List<BranchOfferDto> branches  // vacío o 1+ sedes
 ) {}

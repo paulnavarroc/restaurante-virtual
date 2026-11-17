@@ -40,6 +40,12 @@
         const prep = p.prepTimeMinutes != null
             ? `<p class="text-xs text-slate-400"><i class="bi bi-clock"></i> ${p.prepTimeMinutes} min</p>`
             : '';
+        const branches = Array.isArray(p.branches) ? p.branches : [];
+        const branchLine = branches.length
+            ? `<p class="mt-1 text-xs text-slate-500">📍 ${branches.map(b => escapeHtml(b.branchName)).join(' · ')}</p>`
+            : '';
+
+        const branchesJson = escapeHtml(JSON.stringify(branches));
 
         let actions = '';
         if (!isAuthenticated()) {
@@ -47,7 +53,7 @@
         } else if (p.available && !p.soldOut) {
             const dmi = p.dailyMenuItemId != null ? p.dailyMenuItemId : '';
             actions = `
-                <div class="flex flex-col items-end gap-1" data-cart-actions data-product-id="${p.id}" data-dmi-id="${dmi}">
+                <div class="flex flex-col items-end gap-1" data-cart-actions data-product-id="${p.id}" data-dmi-id="${dmi}" data-branches='${branchesJson}'>
                     <button type="button" data-action="add" class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">
                         <i class="bi bi-cart-plus"></i> Agregar
                     </button>
@@ -70,6 +76,7 @@
                 <div class="flex flex-1 flex-col p-4">
                     <span class="text-xs font-medium uppercase tracking-wide text-sky-600">${escapeHtml(p.categoryName || '')}</span>
                     <h2 class="mt-1 text-lg font-semibold text-slate-900">${escapeHtml(p.name)}</h2>
+                    ${branchLine}
                     <p class="mt-1 line-clamp-2 flex-1 text-sm text-slate-500">${escapeHtml(p.description || '')}</p>
                     <div class="mt-4 flex items-center justify-between gap-2">
                         <div>
@@ -182,4 +189,70 @@
     });
 
     loadMenu();
+})();
+
+(function branchModal() {
+    const modal = document.getElementById('branch-modal');
+    const options = document.getElementById('branch-modal-options');
+    const cancel = document.getElementById('branch-modal-cancel');
+    if (!modal || !options) return;
+
+    function close() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        options.innerHTML = '';
+    }
+
+    cancel?.addEventListener('click', close);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) close();
+    });
+
+    document.addEventListener('click', function (e) {
+        const add = e.target.closest('[data-action="add"]');
+        if (!add) return;
+
+        const wrap = add.closest('[data-cart-actions]');
+        if (!wrap) return;
+
+        let branches = [];
+        try {
+            branches = JSON.parse(wrap.getAttribute('data-branches') || '[]');
+        } catch (_) {}
+
+        const available = branches.filter(b => b.available);
+        // Una sola sede o ya hay dailyMenuItemId → deja que cart.js maneje
+        if (available.length <= 1) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        options.innerHTML = available.map(b => `
+            <button type="button"
+                  class="branch-pick w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left text-sm hover:border-sky-300 hover:bg-sky-50"
+                  data-product-id="${wrap.getAttribute('data-product-id')}"
+                  data-dmi-id="${b.dailyMenuItemId}">
+                <span class="font-medium text-slate-900">${escapeHtml(b.branchName)}</span>
+                ${b.remainingQuota != null ? `<span class="block text-xs text-slate-500">Cupo: ${b.remainingQuota}</span>` : ''}
+            </button>
+    `).join('');
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }, true); // capture: antes que el listener de cart.js
+
+    options.addEventListener('click', function (e) {
+        const btn = e.target.closest('.branch-pick');
+        if (!btn || !window.CartApi) return;
+        const productId = btn.getAttribute('data-product-id');
+        const dmiId = btn.getAttribute('data-dmi-id');
+        close();
+        window.CartApi.add(productId, dmiId, 1);
+    });
+
+    function escapeHtml(s) {
+        if (s == null) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 })();

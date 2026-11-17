@@ -51,7 +51,7 @@
         <div class="min-w-[140px]">
             <label class="mb-1 block text-xs font-medium text-slate-500">Sede</label>
             <select name="branchId" id="filter-branch" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
-                <option value="">Principal</option>
+                <option value="">Todas las sedes</option>
                 <option th:each="b : ${branches}" th:value="${b.id}" th:text="${b.name}"
                         th:selected="${branchId != null and branchId == b.id}"></option>
             </select>
@@ -71,6 +71,19 @@
     <div id="menu-status" class="mb-4 hidden text-sm text-slate-500"></div>
     <div id="product-grid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
     <div id="menu-page" class="hidden" th:attr="data-authenticated=${#authentication != null and #authentication.authenticated and #authentication.name != 'anonymousUser'}"></div>
+
+    <!-- Modal elegir sede -->
+    <div id="branch-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 p-4" role="dialog" aria-modal="true">
+        <div class="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl">
+            <h3 class="text-lg font-semibold text-slate-900">¿Desde qué sede?</h3>
+            <p class="mt-1 text-sm text-slate-500">Este plato está en varias sedes al mismo precio.</p>
+            <div id="branch-modal-options" class="mt-4 flex flex-col gap-2"></div>
+            <button type="button" id="branch-modal-cancel" class="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
+                Cancelar
+            </button>
+        </div>
+    </div>
+
 </section>
 
 <th:block layout:fragment="scripts">
