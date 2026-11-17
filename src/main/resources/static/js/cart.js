@@ -31,7 +31,9 @@
     }
 
     function lineKey(productId, dmiId) {
-        return String(productId) + ':' + (dmiId == null || dmiId === '' ? 'null' : String(dmiId));
+        const p = productId == null ? '' : String(productId);
+        const d = dmiId == null || dmiId === '' || dmiId === 'null' ? 'null' : String(dmiId);
+        return p + ':' + d;
     }
 
     function qtyFromResponse(data, productId, dmiId) {
@@ -46,20 +48,24 @@
     function refreshCardButtons(data) {
         document.querySelectorAll('[data-cart-actions]').forEach(function (wrap) {
             const productId = wrap.getAttribute('data-product-id');
-            const dmiId = wrap.getAttribute('data-dmi-id') || null;
-            const qty = qtyFromResponse(data, productId, dmiId === '' ? null : dmiId);
+            const dmiAttr = wrap.getAttribute('data-dmi-id');
+            const dmiId = (dmiAttr === null || dmiAttr === '') ? null : dmiAttr;
+            const qty = qtyFromResponse(data, productId, dmiId);
+
             const addBtn = wrap.querySelector('[data-action="add"]');
             const inCart = wrap.querySelector('[data-in-cart]');
             const qtyLabel = wrap.querySelector('[data-qty]');
+
+            if (qtyLabel) {
+                qtyLabel.textContent = String(qty);
+            }
+
             if (qty > 0) {
-                if (addBtn) addBtn.classList.add('hidden');
-                if (inCart) {
-                    inCart.classList.remove('hidden');
-                    if (qtyLabel) qtyLabel.textContent = qty;
-                }
+                if (addBtn) addBtn.style.display = 'none';
+                if (inCart) inCart.style.display = 'flex';
             } else {
-                if (addBtn) addBtn.classList.remove('hidden');
-                if (inCart) inCart.classList.add('hidden');
+                if (addBtn) addBtn.style.display = '';
+                if (inCart) inCart.style.display = 'none';
             }
         });
     }
@@ -85,9 +91,9 @@
     }
 
     async function applyResult(data) {
-        if (!data || !data.ok) return;
-        updateBadges(data.cartCount);
-        refreshCardButtons(data);
+        if (!data) return;
+        if (typeof data.cartCount === 'number') updateBadges(data.cartCount);
+        if (data.lines) refreshCardButtons(data);
     }
 
     window.CartApi = {
