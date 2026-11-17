@@ -172,7 +172,6 @@
         }
     });
 
-    // Al cargar menú (logueado), sincronizar badges y botones
     if (document.querySelector('[data-cart-actions]')) {
         CartApi.load();
     }

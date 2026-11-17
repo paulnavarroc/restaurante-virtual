@@ -49,6 +49,8 @@ public class SecurityConfig {
                                 "/",
                                 "/menu",
                                 "/menu/**",
+                                "/api/menu",
+                                "/api/menu/**",
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",

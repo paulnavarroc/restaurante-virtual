@@ -15,14 +15,14 @@
         <p class="mt-1 text-sm text-slate-500">Platos de nuestra carta. Inicia sesión para ordenar.</p>
     </div>
 
-    <!-- Filtros -->
-    <form th:action="@{/menu}" method="get"
-          class="mb-8 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end">
+    <form id="menu-filters"
+          class="mb-8 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:flex-wrap sm:items-end"
+          onsubmit="return false;">
         <div class="min-w-[140px] flex-1">
             <label class="mb-1 block text-xs font-medium text-slate-500">Buscar</label>
             <div class="relative">
                 <i class="bi bi-search pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="search" name="q" th:value="${q}"
+                <input type="search" name="q" id="filter-q" th:value="${q}"
                        placeholder="Ceviche, lomo..."
                        class="w-full rounded-xl border border-slate-300 py-2 pl-9 pr-3 text-sm
                               focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
@@ -30,8 +30,7 @@
         </div>
         <div class="min-w-[140px]">
             <label class="mb-1 block text-xs font-medium text-slate-500">Categoría</label>
-            <select name="categoryId"
-                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+            <select name="categoryId" id="filter-category" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
                 <option value="">Todas</option>
                 <option th:each="c : ${categories}"
                         th:value="${c.id}"
@@ -41,8 +40,7 @@
         </div>
         <div class="min-w-[140px]">
             <label class="mb-1 block text-xs font-medium text-slate-500">Región</label>
-            <select name="regionId"
-                    class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
+            <select name="regionId" id="filter-region" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:ring-2 focus:ring-sky-200">
                 <option value="">Todas</option>
                 <option th:each="r : ${regions}"
                         th:value="${r.id}"
@@ -52,95 +50,31 @@
         </div>
         <div class="min-w-[140px]">
             <label class="mb-1 block text-xs font-medium text-slate-500">Sede</label>
-            <select name="branchId" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
+            <select name="branchId" id="filter-branch" class="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm">
                 <option value="">Principal</option>
                 <option th:each="b : ${branches}" th:value="${b.id}" th:text="${b.name}"
                         th:selected="${branchId != null and branchId == b.id}"></option>
             </select>
         </div>
-        <button type="submit"
-                class="rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700">
+        <button type="button" id="filter-apply" class="rounded-xl bg-sky-600 px-5 py-2 text-sm font-semibold text-white hover:bg-sky-700">
             Filtrar
         </button>
-        <a th:href="@{/menu}" class="rounded-xl px-3 py-2 text-sm text-slate-500 hover:text-sky-600">Limpiar</a>
+        <button type="button" id="filter-clear" class="rounded-xl px-3 py-2 text-sm text-slate-500 hover:text-sky-600">
+            Limpiar
+        </button>
     </form>
+
     <p th:if="${currentShiftLabel != null}" class="mb-4 text-sm text-slate-500">
         Turno actual: <span class="font-semibold text-slate-700" th:text="${currentShiftLabel}"></span>
     </p>
-    <div th:if="${!hasMenu}"
-         class="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center">
-        <i class="bi bi-calendar-x text-3xl text-slate-300"></i>
-        <p class="mt-3 font-medium text-slate-700">Hoy no hay menú publicado</p>
-        <p class="mt-1 text-sm text-slate-500">Vuelve más tarde o prueba otra sede.</p>
-    </div>
 
-    <div th:if="${hasMenu and #lists.isEmpty(products)}"
-         class="rounded-2xl border border-dashed border-slate-200 bg-white p-12 text-center text-slate-500">
-        No hay platos con estos filtros
-    </div>
-
-    <div id="cart-toast" class="pointer-events-none fixed bottom-6 right-6 z-50 hidden rounded-xl bg-slate-900 px-4 py-2 text-sm text-white shadow-lg"></div>
-
-    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        <article th:each="p : ${products}"
-                 class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-sky-200 hover:shadow-md">
-            <div class="relative flex h-44 items-center justify-center bg-slate-100">
-                <img th:if="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}"
-                     th:src="${p.imageUrl}" th:alt="${p.name}"
-                     class="h-full w-full object-cover">
-                <i th:unless="${p.imageUrl != null and !#strings.isEmpty(p.imageUrl)}"
-                   class="bi bi-egg-fried text-5xl text-slate-300"></i>
-                <span th:if="${p.regionName != null}"
-                      class="absolute left-3 top-3 rounded-full bg-white/90 px-2.5 py-0.5 text-[11px] font-semibold text-slate-700 shadow-sm"
-                      th:text="${p.regionName}">Costa</span>
-            </div>
-            <div class="flex flex-1 flex-col p-4">
-                <span class="text-xs font-medium uppercase tracking-wide text-sky-600"
-                      th:text="${p.categoryName}">Categoría</span>
-                <h2 class="mt-1 text-lg font-semibold text-slate-900" th:text="${p.name}">Nombre</h2>
-                <p class="mt-1 line-clamp-2 flex-1 text-sm text-slate-500" th:text="${p.description}">Descripción</p>
-                <div class="mt-4 flex items-center justify-between gap-2">
-                    <div>
-                        <div class="flex items-baseline gap-2">
-                            <span class="text-xl font-bold text-slate-900" th:text="${'S/ ' + #numbers.formatDecimal(p.salePrice(), 1, 2)}">S/ 0</span>
-                            <span th:if="${p.onPromoPrice()}" class="text-sm text-slate-400 line-through" th:text="${'S/ ' + #numbers.formatDecimal(p.listPrice(), 1, 2)}"></span>
-                        </div>
-                        <span th:if="${p.soldOut()}" class="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600">Agotado</span>
-
-                        <p th:if="${p.prepTimeMinutes != null}" class="text-xs text-slate-400">
-                            <i class="bi bi-clock"></i>
-                            <span th:text="${p.prepTimeMinutes + ' min'}"></span>
-                        </p>
-                    </div>
-
-                    <th:block sec:authorize="isAuthenticated()">
-                        <div th:if="${p.available()}"
-                             class="flex flex-col items-end gap-1"
-                             data-cart-actions
-                             th:attr="data-product-id=${p.id()}, data-dmi-id=${p.dailyMenuItemId()}">
-
-                            <button type="button" data-action="add" class="inline-flex items-center gap-1 rounded-xl bg-sky-600 px-3 py-2 text-sm font-semibold text-white hover:bg-sky-700">
-                                <i class="bi bi-cart-plus"></i> Agregar
-                            </button>
-
-                            <div data-in-cart class="items-center gap-1" style="display: none;">
-                                <button type="button" data-action="minus" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">−</button>
-                                <span class="min-w-[4.5rem] text-center text-xs font-semibold text-sky-700">En carrito (<span data-qty>0</span>)</span>
-                                <button type="button" data-action="plus" class="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50">+</button>
-                            </div>
-                        </div>
-                        <span th:if="${p.soldOut()}" class="text-sm text-slate-400">No disponible</span>
-                    </th:block>
-                    <th:block sec:authorize="!isAuthenticated()">
-                        <a th:href="@{/login}"
-                           class="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                            Entrar para pedir
-                        </a>
-                    </th:block>
-                </div>
-            </div>
-        </article>
-    </div>
+    <div id="menu-status" class="mb-4 hidden text-sm text-slate-500"></div>
+    <div id="product-grid" class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"></div>
+    <div id="menu-page" class="hidden" th:attr="data-authenticated=${#authentication != null and #authentication.authenticated and #authentication.name != 'anonymousUser'}"></div>
 </section>
+
+<th:block layout:fragment="scripts">
+    <script th:src="@{/js/menu.js}"></script>
+</th:block>
 </body>
 </html>
